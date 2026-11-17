@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { errorMessage } from "@/shared/domain/app-error";
+import { Alert, Button, InputField } from "@/shared/presentation";
 
 import { useAuth } from "./use-auth";
 
@@ -33,68 +34,43 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      {error !== null && (
-        <p
-          role="alert"
-          className="border-danger/30 bg-danger/5 text-danger rounded-md border px-3 py-2 text-sm"
-        >
-          {error}
-        </p>
-      )}
+      {error !== null && <Alert>{error}</Alert>}
 
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">Correo</span>
-        <input
-          type="email"
-          name="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="email"
-          autoFocus
-          className="border-border bg-surface focus:border-primary rounded-md border px-3 py-2 text-base outline-none"
-          placeholder="admin@stockpyme.com"
-        />
-      </label>
+      <InputField
+        label="Correo"
+        type="email"
+        name="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        autoComplete="email"
+        autoFocus
+        placeholder="admin@stockpyme.com"
+      />
 
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">Contraseña</span>
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="current-password"
-          className="border-border bg-surface focus:border-primary rounded-md border px-3 py-2 text-base outline-none"
-        />
-      </label>
+      <InputField
+        label="Contraseña"
+        type="password"
+        name="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+      />
 
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">
-          Código de verificación <span className="text-muted">(opcional)</span>
-        </span>
-        <input
-          type="text"
-          name="code"
-          value={twoFactorCode}
-          onChange={(event) => setTwoFactorCode(event.target.value)}
-          inputMode="numeric"
-          maxLength={6}
-          autoComplete="one-time-code"
-          className="border-border bg-surface focus:border-primary rounded-md border px-3 py-2 text-base outline-none"
-          placeholder="123456"
-        />
-        <span className="text-muted text-xs">
-          Solo si tienes autenticación en dos pasos activada.
-        </span>
-      </label>
+      <InputField
+        label="Código de verificación (opcional)"
+        hint="Solo si tienes autenticación en dos pasos activada."
+        name="code"
+        value={twoFactorCode}
+        onChange={(event) => setTwoFactorCode(event.target.value)}
+        inputMode="numeric"
+        maxLength={6}
+        autoComplete="one-time-code"
+        placeholder="123456"
+      />
 
-      <button
-        type="submit"
-        disabled={isWorking}
-        className="bg-primary text-primary-foreground mt-2 rounded-md px-4 py-2.5 text-sm font-medium disabled:opacity-60"
-      >
+      <Button type="submit" isLoading={isWorking} className="mt-2">
         {isWorking ? "Ingresando…" : "Iniciar sesión"}
-      </button>
+      </Button>
     </form>
   );
 }

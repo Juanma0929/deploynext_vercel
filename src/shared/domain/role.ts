@@ -1,4 +1,4 @@
-import { DomainError } from "@/shared/domain/app-error";
+import { DomainError } from "./app-error";
 
 /** The two roles of the API. The interface shows or hides by these. */
 export const ROLES = ["admin", "seller"] as const;

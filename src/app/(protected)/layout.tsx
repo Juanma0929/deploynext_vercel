@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getServerSession } from "@/features/auth/di/server";
-import type { Role } from "@/features/auth/domain";
-import { AuthProvider, LogoutButton, ROLE_LABELS } from "@/features/auth/presentation";
+import type { Role } from "@/shared/domain/role";
+import { AuthProvider, LogoutButton } from "@/features/auth/presentation";
+import { ROLE_LABELS } from "@/shared/presentation/role-labels";
 
 /**
  * Nothing in the protected area can be prerendered: every page depends on the

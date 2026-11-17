@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { getServerSession } from "@/features/auth/di/server";
-import { ROLE_LABELS } from "@/features/auth/presentation";
+import { ROLE_LABELS } from "@/shared/presentation/role-labels";
 
 export const metadata: Metadata = {
   title: "Inicio",

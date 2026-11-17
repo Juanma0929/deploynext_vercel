@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from "../../domain/authenticated-user";
-import { toRole } from "../../domain/role";
+import { toRole } from "@/shared/domain/role";
 import type { UserDto } from "../dto/auth.dto";
 
 /**

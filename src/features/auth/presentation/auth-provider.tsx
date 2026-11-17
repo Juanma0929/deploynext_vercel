@@ -9,7 +9,7 @@ import {
   AuthenticatedUser,
   type AuthenticatedUserSnapshot,
 } from "../domain/authenticated-user";
-import type { Role } from "../domain/role";
+import type { Role } from "@/shared/domain/role";
 
 export interface AuthState {
   readonly user: AuthenticatedUser | null;

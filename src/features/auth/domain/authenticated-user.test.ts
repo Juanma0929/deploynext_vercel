@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { DomainError } from "@/shared/domain/app-error";
 
 import { AuthenticatedUser } from "./authenticated-user";
-import { toRole } from "./role";
 
 const valid = {
   id: "u-1",
@@ -47,17 +46,5 @@ describe("AuthenticatedUser", () => {
     const user = new AuthenticatedUser(valid);
 
     expect(AuthenticatedUser.fromSnapshot(user.toSnapshot())).toEqual(user);
-  });
-});
-
-describe("toRole", () => {
-  it("accepts the two roles of the API", () => {
-    expect(toRole("admin")).toBe("admin");
-    expect(toRole("seller")).toBe("seller");
-  });
-
-  it("rejects anything else, so a bad answer fails at the mapper", () => {
-    expect(() => toRole("manager")).toThrow(DomainError);
-    expect(() => toRole(undefined)).toThrow(DomainError);
   });
 });

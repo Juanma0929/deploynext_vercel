@@ -1,6 +1,6 @@
 import { DomainError } from "@/shared/domain/app-error";
 
-import type { Role } from "./role";
+import type { Role } from "@/shared/domain/role";
 
 /**
  * The user as a plain object. Only plain objects cross the boundary between a

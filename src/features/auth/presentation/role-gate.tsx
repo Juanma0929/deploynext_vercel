@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import type { Role } from "../domain/role";
+import type { Role } from "@/shared/domain/role";
 import { useAuth } from "./use-auth";
 
 interface RoleGateProps {
