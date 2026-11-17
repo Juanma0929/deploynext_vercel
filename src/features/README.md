@@ -1,6 +1,6 @@
 # Features
 
-Cada feature (`auth`, `users`, `products`, `suppliers`, `sales`, `payments`, `reports`) tiene las
+Cada feature (`auth`, `users`, `suppliers`, `products`, `sales`, `payments`, `reports`) tiene las
 mismas cinco capas:
 
 ```
@@ -32,3 +32,16 @@ Además:
 - Solo las capas `infrastructure` pueden usar `fetch`. Todo lo demás pasa por el `HttpClient` de
   `src/shared/infrastructure/http`, que se crea en `src/shared/di/http.ts`.
 - Un feature no importa otro feature. Si dos necesitan lo mismo, va en `src/shared`.
+
+## Excepción justificada: el cliente de Wompi
+
+`src/features/payments/infrastructure/wompi-client.ts` es el **único** segundo cliente HTTP del
+proyecto, y existe a propósito:
+
+- habla con Wompi, no con nuestra API, así que **no debe** enviar el JWT del usuario. Se autentica con
+  la llave **pública** del comercio (`NEXT_PUBLIC_WOMPI_PUBLIC_KEY`);
+- tokeniza la tarjeta (o Nequi) directamente desde el navegador hacia Wompi, para que el número y el
+  CVC nunca pasen por nuestro backend. El backend solo recibe el token resultante;
+- las llaves privadas viven únicamente en el backend.
+
+Solo `payments/di/wompi.ts` lo instancia. Cualquier otra llamada HTTP usa el cliente compartido.

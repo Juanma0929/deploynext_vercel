@@ -1,38 +1,33 @@
-import {
-  AppError,
-  ConflictError,
-  ForbiddenError,
-  NetworkError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from "@/shared/domain/errors";
-
+import { ApiRequestError, NETWORK_ERROR_STATUS, messagesFromBody } from "./api-request-error";
 import type { HttpClient, HttpRequestOptions, QueryValue } from "./http-client";
 import type { TokenStorage } from "./token-storage";
 
 type Method = "GET" | "POST" | "PATCH" | "DELETE";
 
-interface ApiErrorBody {
-  readonly message?: string | string[];
-  readonly error?: string;
-}
+const LOGIN_PATH = "/auth/login";
+const HEALTH_PATH = "/health";
+
+/** The endpoints that never carry the Bearer token. */
+const PUBLIC_PATHS: ReadonlySet<string> = new Set([LOGIN_PATH, HEALTH_PATH]);
 
 export interface FetchHttpClientConfig {
   readonly baseUrl: string;
   readonly tokenStorage: TokenStorage;
-  /** Called after a 401 on an authenticated request, once the token is cleared. */
+  /** Called after a 401 outside the login, once the token is cleared. */
   readonly onSessionExpired: () => void;
 }
 
 /**
- * The only HttpClient. It is the interceptor of the app:
+ * The only HttpClient of the API. It is the interceptor of the app:
  *
- * - it attaches `Authorization: Bearer <token>` to every request;
- * - on a 401 to a request that carried a token, it ends the session: it clears
- *   the token and calls onSessionExpired, which sends the user to /login.
- *   A 401 without a token (wrong credentials at login) is just an error;
- * - it turns every other status into one of the application errors.
+ * - it attaches `Authorization: Bearer <token>` to every request except
+ *   /auth/login and /health;
+ * - on a 401 outside the login it ends the session: it clears the token and
+ *   calls onSessionExpired, which sends the user to /login. A 401 from the
+ *   login means wrong credentials, so there it is only an error;
+ * - every failure throws an ApiRequestError, with `message` read whether the
+ *   API sent a string or an array;
+ * - a 204 is returned as undefined, without reading the body.
  */
 export class FetchHttpClient implements HttpClient {
   constructor(private readonly config: FetchHttpClientConfig) {}
@@ -66,23 +61,29 @@ export class FetchHttpClient implements HttpClient {
   ): Promise<T> {
     const response = await this.send(method, path, body, options);
 
+    if (response.status === 204) return undefined as T;
+
     const text = await response.text();
     if (text.length === 0) return undefined as T;
     return JSON.parse(text) as T;
   }
 
-  /** Sends the request and throws an AppError for anything that is not 2xx. */
+  /** Sends the request and throws an ApiRequestError for anything that is not 2xx. */
   private async send(
     method: Method,
     path: string,
     body: unknown,
     options?: HttpRequestOptions,
   ): Promise<Response> {
-    const token = await this.config.tokenStorage.read();
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
     const headers: Record<string, string> = { Accept: "application/json" };
     if (body !== undefined) headers["Content-Type"] = "application/json";
-    if (token !== null) headers.Authorization = `Bearer ${token}`;
+
+    if (!PUBLIC_PATHS.has(normalizedPath)) {
+      const token = await this.config.tokenStorage.read();
+      if (token !== null) headers.Authorization = `Bearer ${token}`;
+    }
 
     const init: RequestInit = { method, headers, cache: "no-store" };
     if (body !== undefined) init.body = JSON.stringify(body);
@@ -90,23 +91,23 @@ export class FetchHttpClient implements HttpClient {
 
     let response: Response;
     try {
-      response = await fetch(this.buildUrl(path, options?.query), init);
+      response = await fetch(this.buildUrl(normalizedPath, options?.query), init);
     } catch {
-      throw new NetworkError();
+      throw new ApiRequestError(NETWORK_ERROR_STATUS, []);
     }
 
     if (response.ok) return response;
 
-    if (response.status === 401 && token !== null) {
+    if (response.status === 401 && normalizedPath !== LOGIN_PATH) {
       await this.config.tokenStorage.clear();
       this.config.onSessionExpired();
     }
 
-    throw await this.toAppError(response);
+    throw new ApiRequestError(response.status, await this.readMessages(response));
   }
 
   private buildUrl(path: string, query?: Readonly<Record<string, QueryValue>>): string {
-    const url = new URL(`${this.config.baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
+    const url = new URL(`${this.config.baseUrl}${path}`);
 
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value === undefined || value === null || value === "") continue;
@@ -116,32 +117,11 @@ export class FetchHttpClient implements HttpClient {
     return url.toString();
   }
 
-  private async toAppError(response: Response): Promise<AppError> {
-    const message = await this.readMessage(response);
-
-    switch (response.status) {
-      case 400:
-        return new ValidationError(message);
-      case 401:
-        return new UnauthorizedError(message);
-      case 403:
-        return new ForbiddenError(message);
-      case 404:
-        return new NotFoundError(message);
-      case 409:
-        return new ConflictError(message);
-      default:
-        return new AppError("unexpected", message ?? "El servidor no pudo responder la solicitud.");
-    }
-  }
-
-  private async readMessage(response: Response): Promise<string | undefined> {
+  private async readMessages(response: Response): Promise<string[]> {
     try {
-      const body = (await response.json()) as ApiErrorBody;
-      if (Array.isArray(body.message)) return body.message.join(" ");
-      return body.message ?? body.error;
+      return messagesFromBody(await response.json());
     } catch {
-      return undefined;
+      return [];
     }
   }
 }

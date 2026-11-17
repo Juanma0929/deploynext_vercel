@@ -15,16 +15,18 @@ Computación en Internet III — Universidad Icesi, 2026B.
 ```bash
 npm install
 cp .env.example .env.local   # y llenar los valores
-npm run dev                  # http://localhost:3001
+npm run dev                  # next dev -p 3001 → http://localhost:3001
 ```
 
-La API usa el puerto 3000 en desarrollo, por eso el frontend corre en el 3001.
+El frontend corre en el puerto **3001** porque el CORS del backend tiene ese origen permitido en
+desarrollo (y la API ocupa el 3000).
 
 ## Variables de entorno
 
 | Variable | Descripción |
 | --- | --- |
 | `NEXT_PUBLIC_API_URL` | URL base de la API NestJS, sin barra final |
+| `NEXT_PUBLIC_WOMPI_PUBLIC_KEY` | Llave **pública** de Wompi sandbox (`pub_test_…`). Las llaves privadas nunca van en el frontend |
 
 `.env.local` nunca se commitea; `.env.example` documenta las variables.
 
@@ -32,7 +34,7 @@ La API usa el puerto 3000 en desarrollo, por eso el frontend corre en el 3001.
 
 | Script | Qué hace |
 | --- | --- |
-| `npm run dev` | Servidor de desarrollo |
+| `npm run dev` | Servidor de desarrollo en el puerto 3001 |
 | `npm run build` | Build de producción |
 | `npm run lint` | ESLint, incluidas las fronteras entre capas |
 | `npm run typecheck` | TypeScript en modo strict, sin emitir archivos |
@@ -44,22 +46,44 @@ src/
   app/                          App Router: layouts y rutas
   features/<feature>/           domain · application · infrastructure · presentation · di
   shared/
-    domain/                     errores comunes de la aplicación
-    infrastructure/http/        el único cliente HTTP, con el interceptor del Bearer y del 401
+    domain/                     errores, Money, DateRange, paginate() y filter()
+    infrastructure/http/        el único cliente HTTP de la API (Bearer, 401, ApiRequestError)
     infrastructure/config/      lectura de las variables de entorno
     presentation/               componentes de UI reutilizables
     di/                         la instancia del cliente HTTP
 ```
 
-Las capas y las reglas entre ellas están en [`src/features/README.md`](src/features/README.md).
+Features: `auth`, `users`, `suppliers`, `products`, `sales`, `payments`, `reports`. Las capas y las
+reglas entre ellas están en [`src/features/README.md`](src/features/README.md).
 
 ### Cliente HTTP
 
-`src/shared/infrastructure/http/fetch-http-client.ts` es el único lugar que llama a `fetch`:
+`src/shared/infrastructure/http/fetch-http-client.ts` es el cliente de la API:
 
-- agrega `Authorization: Bearer <token>` a cada petición;
-- si una petición autenticada recibe **401**, borra el token y redirige a `/login`, lo que cierra
-  la sesión y reinicia el estado de todos los features;
-- traduce 400, 401, 403, 404 y 409 a errores de la aplicación con mensajes para el usuario.
+- agrega `Authorization: Bearer <token>` a todas las peticiones excepto `/auth/login` y `/health`;
+- si recibe un **401** fuera del login, borra el token y redirige a `/login`, lo que cierra la
+  sesión y reinicia el estado de todos los features;
+- todo error se lanza como `ApiRequestError` (con `status` y `messages`), leyendo `message` tanto si
+  la API lo manda como texto como si lo manda como arreglo;
+- si la respuesta es **204**, no intenta parsear el cuerpo.
 
 El token vive en una cookie para que el middleware pueda proteger las rutas desde el servidor.
+
+La única excepción es el cliente de Wompi en `src/features/payments/infrastructure`, que usa la
+llave pública y no el token del usuario. La justificación está en
+[`src/features/README.md`](src/features/README.md#excepción-justificada-el-cliente-de-wompi).
+
+### Utilidades del dominio compartido
+
+| Utilidad | Qué garantiza |
+| --- | --- |
+| `Money` | Pesos colombianos siempre enteros; `format()` en `es-CO` (`$ 12.500`) |
+| `DateRange` | Fechas `YYYY-MM-DD` que existen en el calendario y `from ≤ to` |
+| `paginate()` | Página de una lista, con la página fuera de rango ajustada |
+| `filter()` | Aplica solo los criterios activos (los vacíos se ignoran) |
+
+### Cold start de Render
+
+El backend corre en el plan gratuito de Render, que lo duerme tras un rato sin tráfico. Al abrir
+`/login` se llama a `GET /health` y se muestra "Conectando con el servidor…" hasta que responde, con
+opción de reintentar si no lo hace.
