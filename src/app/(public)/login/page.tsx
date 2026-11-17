@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { ServerWakeUp } from "@/features/auth/presentation";
+import { LoginForm, ServerWakeUp } from "@/features/auth/presentation";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión",
@@ -12,7 +13,10 @@ export default function LoginPage() {
       <section className="w-full max-w-sm rounded-lg bg-white p-6 shadow-sm">
         <h1 className="mb-6 text-center text-xl font-semibold">StockPyme</h1>
         <ServerWakeUp>
-          <p className="text-muted text-center text-sm">Servidor disponible.</p>
+          {/* LoginForm reads ?next=, which needs a Suspense boundary. */}
+          <Suspense>
+            <LoginForm />
+          </Suspense>
         </ServerWakeUp>
       </section>
     </main>
