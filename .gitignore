@@ -42,3 +42,12 @@ next-env.d.ts
 
 # the example file is documentation, not configuration
 !.env.example
+
+# playwright
+/playwright-report
+/test-results
+/blob-report
+
+# local tooling, not part of the project
+/.vscode
+/.claude

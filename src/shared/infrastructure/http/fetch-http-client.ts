@@ -119,7 +119,10 @@ export class FetchHttpClient implements HttpClient {
           message === undefined ? [] : [message],
         );
       case 401:
-        return new UnauthorizedError();
+        // The message stays the Spanish default, because most 401s really are
+        // an expired session. The text of the API travels as a detail so a
+        // feature that knows better, such as the login, can say something else.
+        return new UnauthorizedError(undefined, message === undefined ? [] : [message]);
       case 403:
         return new ForbiddenError(message);
       case 404:

@@ -52,6 +52,8 @@ La API usa el puerto 3000 en desarrollo, así que el frontend corre en el 3001.
 | `npm run lint` | ESLint, incluidas las fronteras entre capas |
 | `npm run typecheck` | TypeScript sin emitir archivos |
 | `npm test` | Pruebas unitarias del dominio y los casos de uso (Vitest) |
+| `npm run test:e2e` | Pruebas end-to-end en navegador (Playwright) |
+| `npm run test:e2e:ui` | Lo mismo, en modo interactivo |
 
 ## Arquitectura
 
@@ -67,11 +69,49 @@ Las capas y las reglas entre ellas están descritas en
 `eslint-plugin-boundaries`: un import que apunte en la dirección equivocada
 hace fallar `npm run lint`.
 
+## Pruebas
+
+Las unitarias cubren el dominio y los casos de uso con repositorios falsos, sin
+red: `npm test`.
+
+Las end-to-end usan Playwright y cubren autenticación y autorización. Por
+defecto compilan la aplicación, la sirven en el puerto 3001 y la prueban contra
+la API desplegada, así que antes de correrlas hay que definir en `.env.local`
+las cuatro variables `E2E_*` que documenta `.env.example`:
+
+```bash
+npm run test:e2e
+```
+
+Dos cosas que hay que saber:
+
+- **La API tiene que permitir `http://localhost:3001` en `CORS_ORIGINS`**, o el
+  navegador bloquea cada petición. La variable acepta varios orígenes separados
+  por comas.
+- **La suite corre en serie a propósito.** `POST /auth/logout` invalida todos
+  los tokens del usuario en todos los dispositivos, y las pruebas comparten las
+  dos cuentas del seed: en paralelo, una prueba que cierra sesión mataría la de
+  otra. Correr de a una es lo que hace que la suite dé el mismo resultado dos
+  veces seguidas.
+
+Para probar contra el entorno desplegado en vez de uno local:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://icesi-2026b-2026b-nextjs-taller-gro.vercel.app npm run test:e2e
+```
+
 ## Pipelines
 
 `.github/workflows/ci.yml` corre en cada pull request y en cada push a `main`:
-lint (con las fronteras entre capas), typecheck, pruebas unitarias y build. Si
-todo pasa y el push fue a `main`, despliega a Vercel con el CLI.
+lint (con las fronteras entre capas), typecheck, pruebas unitarias y build;
+después las end-to-end con Playwright. Si todo pasa y el push fue a `main`,
+despliega a Vercel con el CLI. No se despliega nada que no haya pasado las dos
+suites.
+
+Las pruebas end-to-end necesitan, en Settings → Secrets and variables →
+Actions, la variable `NEXT_PUBLIC_API_URL` (es pública) y los cuatro secretos
+`E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_SELLER_EMAIL` y
+`E2E_SELLER_PASSWORD`.
 
 El despliegue no usa la integración de GitHub de Vercel: esa integración exige
 plan Pro para leer un repositorio privado de una organización, y este repo

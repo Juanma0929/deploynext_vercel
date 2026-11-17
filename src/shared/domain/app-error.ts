@@ -34,8 +34,11 @@ export class ValidationError extends AppError {
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = "Tu sesión expiró. Inicia sesión de nuevo.") {
-    super("unauthorized", message);
+  constructor(
+    message = "Tu sesión expiró. Inicia sesión de nuevo.",
+    details: readonly string[] = [],
+  ) {
+    super("unauthorized", message, details);
     this.name = "UnauthorizedError";
   }
 }
