@@ -90,13 +90,13 @@ antes de renderizar:
 
 | Situación | Resultado |
 | --- | --- |
-| Sin token, cualquier ruta salvo `/login` | Redirige a `/login` |
-| Token vencido o ilegible | Borra la cookie y redirige a `/login?session=expired` |
-| Token vigente en `/login` | Redirige a `/dashboard` |
+| Sin token, cualquier ruta salvo `/login` | Redirige a `/login?next=<ruta pedida>` |
+| Token vencido o ilegible | Borra la cookie y redirige a `/login?session=expired&next=<ruta pedida>` |
+| Token vigente en `/login` | Redirige al inicio (`/`) |
 
 El token dura **1 hora** y no hay refresh; la cookie vive lo mismo. Si una petición recibe **401**,
 el interceptor del cliente HTTP borra el token y lleva a `/login?session=expired`, donde se muestra
-"Tu sesión expiró". El proxy solo lee la fecha de expiración del token; la firma y el rol los valida
+"Tu sesión expiró". Tras iniciar sesión de nuevo, `?next=` devuelve al usuario a donde estaba. El proxy solo lee la fecha de expiración del token; la firma y el rol los valida
 la API en cada petición.
 
 ### Cold start de Render

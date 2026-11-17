@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { ServerWakeUp } from "@/features/auth/presentation";
+import { LoginForm, ServerWakeUp } from "@/features/auth/presentation";
 import {
   SESSION_EXPIRED_MESSAGE,
   SESSION_EXPIRED_REASON,
@@ -34,7 +35,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         )}
 
         <ServerWakeUp>
-          <p className="text-muted text-center text-sm">Servidor disponible.</p>
+          {/* LoginForm reads ?next=, which needs a Suspense boundary. */}
+          <Suspense>
+            <LoginForm />
+          </Suspense>
         </ServerWakeUp>
       </section>
     </main>

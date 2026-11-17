@@ -1,4 +1,4 @@
-import { LOGIN_EXPIRED_PATH, LOGIN_PATH } from "@/shared/domain/session";
+import { LOGIN_PATH, expiredSessionLoginPath } from "@/shared/domain/session";
 import { apiBaseUrl } from "@/shared/infrastructure/config/env";
 import {
   CookieTokenStorage,
@@ -22,7 +22,8 @@ export function browserTokenStorage(): TokenStorage {
  *
  * The token lasts one hour and there is no refresh, so a 401 means the session
  * is over. The client has already cleared the token; this sends the user to the
- * login with the "your session expired" notice, with a full page load so every
+ * login with the "your session expired" notice (and ?next= to come back to the
+ * same page after logging in again), with a full page load so every
  * in-memory store of every feature starts over empty. It replaces the history
  * entry, so "back" does not return to the protected page.
  */
@@ -31,7 +32,10 @@ export function browserHttpClient(): HttpClient {
     baseUrl: apiBaseUrl(),
     tokenStorage: browserTokenStorage(),
     onSessionExpired: () => {
-      if (window.location.pathname !== LOGIN_PATH) window.location.replace(LOGIN_EXPIRED_PATH);
+      const { pathname, search } = window.location;
+      if (pathname !== LOGIN_PATH) {
+        window.location.replace(expiredSessionLoginPath(`${pathname}${search}`));
+      }
     },
   });
   return httpClient;

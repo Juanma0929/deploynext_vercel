@@ -33,6 +33,22 @@ Además:
   `src/shared/infrastructure/http`, que se crea en `src/shared/di/http.ts`.
 - Un feature no importa otro feature. Si dos necesitan lo mismo, va en `src/shared`.
 
+## Al cerrar sesión
+
+`POST /auth/logout` invalida los tokens del usuario en todos sus dispositivos. El front borra el
+token (memoria y cookie) aunque la llamada falle, limpia los stores y redirige a `/login` con una
+recarga completa.
+
+Cada store de un feature debe registrar su reset en `src/shared/presentation/session-reset.ts`, para
+que no quede nada del usuario anterior aunque el store sobreviva a la recarga (por ejemplo, uno que
+persiste en `localStorage`):
+
+```ts
+import { onSessionReset } from "@/shared/presentation/session-reset";
+
+onSessionReset(() => useProductsStore.getState().reset());
+```
+
 ## Excepción justificada: el cliente de Wompi
 
 `src/features/payments/infrastructure/wompi-client.ts` es el **único** segundo cliente HTTP del
