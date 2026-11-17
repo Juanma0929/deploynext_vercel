@@ -1,0 +1,25 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# production
+/build
+
+# environment: only .env.example is committed
+.env
+.env*.local
+.env.development
+.env.production
+
+# vercel
+.vercel
+
+# logs and OS files
+npm-debug.log*
+.DS_Store
+Thumbs.db
