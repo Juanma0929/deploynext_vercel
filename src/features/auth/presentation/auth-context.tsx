@@ -3,6 +3,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
+import { resetSessionState } from "@/shared/presentation/session-reset";
 
 import { authContainer } from "../di/container";
 import type { LoginCredentials } from "../domain/credentials";
@@ -24,7 +25,11 @@ export type LoginOutcome =
 export interface AuthContextValue {
   readonly state: AuthState;
   readonly login: (credentials: LoginCredentials) => Promise<LoginOutcome>;
+  /** Ends the session on every device and goes to /login. Never rejects. */
+  readonly logout: () => Promise<void>;
 }
+
+const LOGIN_PATH = "/login";
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -84,7 +89,22 @@ export function AuthProvider({ children }: { readonly children: ReactNode }) {
     }
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({ state, login }), [state, login]);
+  const logout = useCallback(async (): Promise<void> => {
+    // Clears the token and the cookie even if the request fails.
+    await authContainer().logout.execute();
+
+    setState({ status: "anonymous" });
+    resetSessionState();
+
+    // A full page load, not router.push: every in-memory store of every
+    // feature starts over, and "back" does not return to a protected page.
+    window.location.replace(LOGIN_PATH);
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ state, login, logout }),
+    [state, login, logout],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

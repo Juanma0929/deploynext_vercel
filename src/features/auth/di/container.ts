@@ -4,6 +4,7 @@ import { GetProfileUseCase } from "../application/get-profile.use-case";
 import { HasSessionUseCase } from "../application/has-session.use-case";
 import { LoginUseCase } from "../application/login.use-case";
 import { LogoutLocallyUseCase } from "../application/logout-locally.use-case";
+import { LogoutUseCase } from "../application/logout.use-case";
 import { WakeUpServer } from "../application/wake-up-server";
 import { AuthHttpRepository } from "../infrastructure/auth.http.repository";
 import { ServerStatusHttpRepository } from "../infrastructure/server-status.http.repository";
@@ -14,6 +15,7 @@ export interface AuthContainer {
   readonly getProfile: GetProfileUseCase;
   readonly hasSession: HasSessionUseCase;
   readonly logoutLocally: LogoutLocallyUseCase;
+  readonly logout: LogoutUseCase;
 }
 
 let container: AuthContainer | null = null;
@@ -32,6 +34,7 @@ export function authContainer(): AuthContainer {
     getProfile: new GetProfileUseCase(authRepository),
     hasSession: new HasSessionUseCase(tokenStore),
     logoutLocally: new LogoutLocallyUseCase(tokenStore),
+    logout: new LogoutUseCase(authRepository, tokenStore),
   };
   return container;
 }

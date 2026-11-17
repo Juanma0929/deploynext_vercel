@@ -24,4 +24,9 @@ export class AuthHttpRepository implements AuthRepository {
   async getProfile(): Promise<User> {
     return toUser(await this.http.get<UserDto>("/auth/profile"));
   }
+
+  async logout(): Promise<void> {
+    // 204 No Content: the client returns undefined without reading a body.
+    await this.http.post<void>("/auth/logout");
+  }
 }

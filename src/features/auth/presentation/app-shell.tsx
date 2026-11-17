@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { navigationFor, ROLE_LABELS } from "./navigation";
 import { useAuth } from "./use-auth";
 
 /** The frame of every protected page: the navigation of the role, then the page. */
 export function AppShell({ children }: { readonly children: ReactNode }) {
-  const { state } = useAuth();
+  const { state, logout } = useAuth();
   const pathname = usePathname();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  function handleLogout() {
+    setIsLoggingOut(true);
+    void logout();
+  }
 
   if (state.status !== "authenticated") {
     return (
@@ -54,6 +60,15 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             <span className="font-medium">{user.name}</span>
             <span className="text-muted"> · {ROLE_LABELS[user.role]}</span>
           </p>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            title="Cierra tu sesión en todos tus dispositivos"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-60"
+          >
+            {isLoggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+          </button>
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</div>

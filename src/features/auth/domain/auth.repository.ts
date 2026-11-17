@@ -11,4 +11,7 @@ export interface AuthRepository {
 
   /** The user the stored token belongs to. */
   getProfile(): Promise<User>;
+
+  /** Invalidates every token of the user, on every device. */
+  logout(): Promise<void>;
 }
