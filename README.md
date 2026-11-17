@@ -82,6 +82,23 @@ llave pública y no el token del usuario. La justificación está en
 | `paginate()` | Página de una lista, con la página fuera de rango ajustada |
 | `filter()` | Aplica solo los criterios activos (los vacíos se ignoran) |
 
+### Rutas protegidas
+
+Las rutas privadas viven en el grupo `src/app/(protected)`, con su propio `layout.tsx`.
+`src/proxy.ts` (el `middleware.ts` de Next.js 16, que lo renombró a *proxy*) decide en el servidor,
+antes de renderizar:
+
+| Situación | Resultado |
+| --- | --- |
+| Sin token, cualquier ruta salvo `/login` | Redirige a `/login` |
+| Token vencido o ilegible | Borra la cookie y redirige a `/login?session=expired` |
+| Token vigente en `/login` | Redirige a `/dashboard` |
+
+El token dura **1 hora** y no hay refresh; la cookie vive lo mismo. Si una petición recibe **401**,
+el interceptor del cliente HTTP borra el token y lleva a `/login?session=expired`, donde se muestra
+"Tu sesión expiró". El proxy solo lee la fecha de expiración del token; la firma y el rol los valida
+la API en cada petición.
+
 ### Cold start de Render
 
 El backend corre en el plan gratuito de Render, que lo duerme tras un rato sin tráfico. Al abrir

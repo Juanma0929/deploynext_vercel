@@ -1,10 +1,13 @@
-import { TOKEN_COOKIE, type TokenStorage } from "./token-storage";
+import { SESSION_LIFETIME_SECONDS } from "@/shared/domain/session";
 
-const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+import { TOKEN_COOKIE, type TokenStorage } from "./token-storage";
 
 /**
  * Keeps the token in a cookie of the browser. A cookie, and not localStorage,
- * because middleware runs on the server and can only see cookies.
+ * because the proxy runs on the server and can only see cookies.
+ *
+ * The cookie lives as long as the token, one hour, so the browser drops it
+ * when the session ends even if no request ever answers 401.
  *
  * On the server there is no document, so it reads as "no session".
  */
@@ -24,7 +27,7 @@ export class CookieTokenStorage implements TokenStorage {
     document.cookie = [
       `${TOKEN_COOKIE}=${encodeURIComponent(token)}`,
       "Path=/",
-      `Max-Age=${ONE_DAY_IN_SECONDS}`,
+      `Max-Age=${SESSION_LIFETIME_SECONDS}`,
       "SameSite=Lax",
       ...(window.location.protocol === "https:" ? ["Secure"] : []),
     ].join("; ");

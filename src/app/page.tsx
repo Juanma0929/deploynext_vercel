@@ -1,8 +1,8 @@
-export default function HomePage() {
-  return (
-    <main className="mx-auto flex min-h-full max-w-2xl flex-col justify-center gap-2 px-4">
-      <h1 className="text-2xl font-semibold">StockPyme</h1>
-      <p className="text-muted">Inventario y ventas para pequeños negocios.</p>
-    </main>
-  );
+import { redirect } from "next/navigation";
+
+import { HOME_PATH } from "@/shared/domain/session";
+
+/** The root has no screen of its own: the proxy already sent anonymous visitors to /login. */
+export default function RootPage() {
+  redirect(HOME_PATH);
 }
