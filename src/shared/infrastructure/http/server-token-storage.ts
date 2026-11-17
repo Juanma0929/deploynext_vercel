@@ -3,9 +3,13 @@ import { cookies } from "next/headers";
 import { TOKEN_COOKIE, type TokenStorage } from "./token-storage";
 
 /**
- * The server side of the token, for Server Components and route handlers. It
- * only reads: a Server Component cannot set a cookie, so logging in and out
- * stays in the browser.
+ * The server side of the token, for Server Components and route handlers.
+ *
+ * It only reads. A Server Component cannot write a cookie, so saving and
+ * clearing are no-ops rather than errors: the use cases call clear() when the
+ * API rejects a token, and on the server the right answer to that is to let the
+ * guard redirect to the login page, where the browser replaces the cookie.
+ * Logging in and out happen in the browser, with CookieTokenStorage.
  */
 export class ServerTokenStorage implements TokenStorage {
   async read(): Promise<string | null> {
@@ -14,10 +18,10 @@ export class ServerTokenStorage implements TokenStorage {
   }
 
   async save(): Promise<void> {
-    throw new Error("The token cannot be written from the server.");
+    // Not possible from a Server Component. See the note above.
   }
 
   async clear(): Promise<void> {
-    throw new Error("The token cannot be cleared from the server.");
+    // Not possible from a Server Component. See the note above.
   }
 }

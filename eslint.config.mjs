@@ -78,11 +78,20 @@ const eslintConfig = defineConfig([
                 shared("shared-domain", "shared-infrastructure"),
               ],
             },
-            // Routes only compose presentation; they never touch a repository.
+            // Routes compose presentation and ask di/ for a use case. They may
+            // read a domain type or an entity they were handed, but they can
+            // never see infrastructure: no route builds a repository.
             {
               from: from("app"),
               allow: [
-                shared("app", "presentation", "di", "shared-domain", "shared-presentation"),
+                shared(
+                  "app",
+                  "presentation",
+                  "di",
+                  "domain",
+                  "shared-domain",
+                  "shared-presentation",
+                ),
               ],
             },
             { from: from("shared-domain"), allow: [shared("shared-domain")] },
