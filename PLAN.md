@@ -12,7 +12,7 @@ Backend existente: `icesi-2026b-nestjs-taller-group-4` (NestJS 11, Swagger en `/
 - Nadie toca archivos de otro feature. Lo compartido (`src/shared/**`) lo cambia el dueño de la base;
   si alguien necesita algo ahí, lo pide en el chat del equipo.
 - Cada integrante debe poder **explicar y depurar cualquier parte** de la app en la sustentación:
-  al terminar su feature, explíquele su código a los otros tres.
+  al terminar su feature, explíquele su código a los otros dos.
 
 ## Stack acordado
 
@@ -62,10 +62,11 @@ Contrato por capa, igual en **todos** los features:
   llaman red ni store directamente.
 - `di/`: el **único** lugar donde se instancian repositorios y casos de uso concretos.
 
-## Reparto de trabajo (4 integrantes)
+## Reparto de trabajo (3 integrantes)
 
-### Integrante 1 — Base, shared y autenticación/autorización *(camino crítico: va primero)*
-Peso en rúbrica: App Router 5% + Auth 5% + Autorización 5% + parte de Clean Architecture.
+### Integrante 1 — Base, shared, autenticación/autorización, usuarios y despliegue *(camino crítico: va primero)*
+Peso en rúbrica: App Router 5% + Auth 5% + Autorización 5% + Despliegue 10% + parte de Clean
+Architecture.
 
 1. Scaffold: `create-next-app` (TS, Tailwind, App Router), `tsconfig` estricto, ESLint +
    `eslint-plugin-boundaries` con las reglas entre capas, scripts de npm.
@@ -81,11 +82,18 @@ Peso en rúbrica: App Router 5% + Auth 5% + Autorización 5% + parte de Clean Ar
 6. Kit de UI tipado y reutilizable en `shared/presentation/components`: `Button`, `Input`, `Select`,
    `Table`, `Modal`, `Badge`, `Pagination`, `Toast`/`Alert` (prohibido `window.alert`).
 7. Página `/login` y `/dashboard`.
+8. Feature `users` (solo admin): `GET/POST /users`, `GET/PATCH /users/:id`; crear usuario con rol,
+   **desactivar** en lugar de borrar (`isActive: false`), cambio de rol desde la UI. Es el mecanismo
+   de administración de roles que exige la rúbrica, así que va junto con la autorización.
+9. CORS en el backend (`src/main.ts` del repo NestJS) con el origen de Vercel, despliegue del
+   frontend a Vercel y workflow de GitHub Actions con lint + build + unit + E2E.
+10. E2E (Playwright) de los flujos que le pertenecen: login correcto/incorrecto, cierre de sesión y
+    un `seller` que **no** puede entrar a `/users` ni `/reports`.
 
 **Desbloquea a los demás.** Debe mergear base + shared + auth antes que nadie más empiece a
-integrar.
+integrar. Monta Playwright y el pipeline para que el integrante 3 solo agregue su spec de negocio.
 
-### Integrante 2 — Productos y proveedores
+### Integrante 2 — Productos, proveedores y reportes
 Peso: Funcionalidades + UI + Estado.
 
 - Feature `suppliers`: entidad con invariantes (nombre obligatorio), puerto y casos de uso
@@ -100,10 +108,14 @@ Peso: Funcionalidades + UI + Estado.
 - UI: tabla con **filtros** (texto, categoría, proveedor, solo activos, solo stock bajo) y
   **paginación numérica en cliente** (el backend no pagina), formularios de crear/editar con
   validación y mensajes de error, badge de stock bajo, acciones de escritura visibles solo a admin.
-- Tests unitarios de ambas entidades y de sus casos de uso con repos falsos.
+- Feature `reports` (solo admin): casos de uso para `/reports/top-products`, `/reports/low-stock`,
+  `/reports/sales` y descarga de `/reports/sales/pdf`; filtros por rango de fechas **inclusivos en
+  hora de Colombia**; tarjetas de totales (ventas, ingresos, utilidad) y tablas. Reutiliza la tabla
+  y los filtros que ya hizo para productos.
+- Tests unitarios de las tres entidades y de sus casos de uso con repos falsos.
 
-### Integrante 3 — Ventas y pagos *(el feature más difícil: el que lo tome no toma nada más)*
-Peso: Funcionalidades + UI + Estado.
+### Integrante 3 — Ventas, pagos y entregables *(el feature más difícil: no toma otro feature)*
+Peso: Funcionalidades + UI + Estado + parte de Pruebas + README 5%.
 
 - Feature `sales`: entidades `Sale`, `SaleItem` y los estados `pending | paid | declined | cancelled`
   como tipo de dominio; invariante: cantidad ≥ 1, no se arma venta vacía.
@@ -119,36 +131,29 @@ Peso: Funcionalidades + UI + Estado.
 - Historial: ventas del día del vendedor, detalle `[id]`, y vista de admin con todas las ventas +
   cancelar.
 - Tests unitarios de las reglas de estado y del cálculo/validación del carrito.
-
-### Integrante 4 — Reportes, usuarios, E2E y entregables
-Peso: Reportes/usuarios (Funcionalidades) + Pruebas 15% + Despliegue 10% + README 5%.
-
-- Feature `reports` (solo admin): casos de uso para `/reports/top-products`, `/reports/low-stock`,
-  `/reports/sales` y descarga de `/reports/sales/pdf`; filtros por rango de fechas **inclusivos en
-  hora de Colombia**; tarjetas de totales (ventas, ingresos, utilidad) y tablas.
-- Feature `users` (solo admin): `GET/POST /users`, `GET/PATCH /users/:id`; crear usuario con rol,
-  **desactivar** en lugar de borrar (`isActive: false`), cambio de rol desde la UI.
-- Playwright: `login` correcto/incorrecto, cierre de sesión, un `seller` que **no** puede entrar a
-  `/users` ni `/reports`, y un flujo de negocio completo (crear producto como admin → venderlo como
-  seller). Suite repetible dos veces con el mismo resultado; tests independientes o en `serial`.
-- CI/CD: workflow de GitHub Actions con lint + build + unit + E2E, y despliegue automático del
-  frontend a Vercel.
+- E2E (Playwright) del flujo de negocio completo sobre el setup que dejó el integrante 1: crear
+  producto como admin → venderlo como seller → cobrarlo. La suite debe correr **dos veces seguidas
+  con el mismo resultado**; tests independientes o declarados en `serial` si comparten estado.
 - `README.md` (instalación, variables de entorno, cómo probar cada funcionalidad, enlaces a
   frontend y backend en producción, herramientas de IA usadas) e **informe de funcionalidades**
-  (capas de la arquitectura, auth, autorización y gestión de estado) para subir a intu.
+  (capas de la arquitectura, auth, autorización y gestión de estado) para subir a intu. Cada
+  integrante le entrega por escrito la descripción de sus features; él consolida y redacta.
 
 ## Tareas que no son de un solo integrante
 
 | Tarea | Dueño | Nota |
 |---|---|---|
-| `enableCors` en el backend (`src/main.ts`) con el origen de Vercel | Integrante 1 + 4 | **Obligatorio**: hoy el backend no tiene CORS y la app desplegada fallaría en la sustentación |
-| `synchronize: true` en `app.module.ts` | Integrante 4 | Revisar antes de producción |
+| `enableCors` en el backend (`src/main.ts`) con el origen de Vercel | Integrante 1 | **Obligatorio**: hoy el backend no tiene CORS y la app desplegada fallaría en la sustentación |
+| `synchronize: true` en `app.module.ts` | Integrante 1 | Revisar antes de producción |
 | Paginación | Integrante 2 y 3 | El backend no pagina: se pagina en cliente y se documenta en el informe |
+| Descripción de cada feature para el informe | Los 3 | La redacción final la consolida el integrante 3 |
 
 ## Orden de ejecución
 
 1. **Integrante 1** sube base + shared + auth y mergea a `main`. Nadie integra antes de esto.
-2. Los integrantes 2, 3 y 4 trabajan en paralelo sobre esa base, cada uno en su rama.
+   Mientras eso ocurre, los integrantes 2 y 3 ya pueden escribir sus capas `domain/` y
+   `application/` con sus tests unitarios: no dependen de nada compartido.
+2. Los integrantes 2 y 3 trabajan en paralelo sobre esa base, cada uno en su rama.
 3. CORS en el backend + despliegue del frontend a Vercel en cuanto exista la primera pantalla real.
 4. E2E y README al final, cuando los features estén en `main`.
 5. Antes de entregar: `npm run lint`, `npm run build`, `npm test`, `npx playwright test` **dos veces
