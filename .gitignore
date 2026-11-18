@@ -24,3 +24,10 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 .env*
+!.env*.example
+
+# playwright: results, reports and the saved sessions
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
