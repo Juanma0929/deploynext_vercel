@@ -69,7 +69,7 @@ reglas entre ellas están en [`src/features/README.md`](src/features/README.md).
 
 El token vive en una cookie para que el middleware pueda proteger las rutas desde el servidor.
 
-La única excepción es el cliente de Wompi en `src/features/payments/infrastructure`, que usa la
+La única excepción es `WompiCardTokenizer` en `src/features/payments/infrastructure`, que usa la
 llave pública y no el token del usuario. La justificación está en
 [`src/features/README.md`](src/features/README.md#excepción-justificada-el-cliente-de-wompi).
 

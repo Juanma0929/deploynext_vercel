@@ -1,5 +1,7 @@
 import { AppError } from "@/shared/domain/errors";
 
+import type { CardIssues } from "./card-details";
+
 /**
  * 409: the sale is no longer pending, already has a payment, or another
  * payment for it is in progress. A sale is charged only once.
@@ -19,6 +21,25 @@ export class PaymentGatewayError extends AppError {
   constructor() {
     super("Wompi no respondió a tiempo. No se cobró nada: puedes intentarlo de nuevo.");
     this.name = "PaymentGatewayError";
+  }
+}
+
+/**
+ * Wompi refused to tokenise the card (422): the data is not valid for it. The
+ * issues say which field, when Wompi tells.
+ */
+export class CardRejectedError extends AppError {
+  constructor(readonly issues: CardIssues = {}) {
+    super("Wompi no aceptó los datos de la tarjeta. Revísalos e inténtalo de nuevo.");
+    this.name = "CardRejectedError";
+  }
+}
+
+/** Wompi could not be reached to tokenise the card. Nothing was charged. */
+export class TokenizerUnavailableError extends AppError {
+  constructor() {
+    super("No se pudo conectar con Wompi para validar la tarjeta. No se cobró nada: inténtalo de nuevo.");
+    this.name = "TokenizerUnavailableError";
   }
 }
 

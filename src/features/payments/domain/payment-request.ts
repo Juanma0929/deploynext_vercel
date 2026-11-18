@@ -9,11 +9,22 @@ export interface NequiPaymentValues {
 
 export type NequiPaymentField = keyof NequiPaymentValues;
 
+/** A card charge: the token Wompi gave for the card, never the card itself. */
+export interface CardPaymentValues {
+  readonly customerEmail: string;
+  readonly cardToken: string;
+  readonly installments: number;
+}
+
 /** The message of each field that breaks a rule. Empty when the request is valid. */
-export type PaymentIssues = Partial<Record<NequiPaymentField, string>>;
+export type PaymentIssues = Partial<Record<"customerEmail" | "phoneNumber" | "installments", string>>;
 
 /** A Nequi number: exactly 10 digits, as the API checks it (/^\d{10}$/). */
 const NEQUI_PHONE = /^\d{10}$/;
+
+/** The installments Wompi accepts for a credit card. */
+export const MIN_INSTALLMENTS = 1;
+export const MAX_INSTALLMENTS = 36;
 
 /**
  * Spaces, dashes, dots and parentheses are only how people write a number:
@@ -23,13 +34,26 @@ export function normalizePhoneNumber(text: string): string {
   return text.replace(/[\s\-.()]/g, "");
 }
 
+export function customerEmailIssue(email: string): string | undefined {
+  const value = email.trim();
+  if (value === "") return "Escribe el correo del cliente.";
+  if (!isValidEmail(value)) return "Escribe un correo válido.";
+  return undefined;
+}
+
+export function installmentsIssue(installments: number): string | undefined {
+  if (!Number.isSafeInteger(installments) || installments < MIN_INSTALLMENTS || installments > MAX_INSTALLMENTS) {
+    return `Las cuotas van de ${MIN_INSTALLMENTS} a ${MAX_INSTALLMENTS}.`;
+  }
+  return undefined;
+}
+
 /** The rules of a Nequi charge, the same ones the API applies. */
 export function nequiPaymentIssues(values: NequiPaymentValues): PaymentIssues {
   const issues: PaymentIssues = {};
 
-  const email = values.customerEmail.trim();
-  if (email === "") issues.customerEmail = "Escribe el correo del cliente.";
-  else if (!isValidEmail(email)) issues.customerEmail = "Escribe un correo válido.";
+  const email = customerEmailIssue(values.customerEmail);
+  if (email !== undefined) issues.customerEmail = email;
 
   const phone = normalizePhoneNumber(values.phoneNumber);
   if (phone === "") issues.phoneNumber = "Escribe el número de Nequi del cliente.";
@@ -40,16 +64,20 @@ export function nequiPaymentIssues(values: NequiPaymentValues): PaymentIssues {
   return issues;
 }
 
+/** How the sale is paid, with what each method needs. */
+export type PaymentMethodDetails =
+  | { readonly method: "NEQUI"; readonly phoneNumber: string }
+  | { readonly method: "CARD"; readonly cardToken: string; readonly installments: number };
+
 /**
- * A request to charge a sale. It cannot exist with an invalid email or, for
- * Nequi, with a number that is not 10 digits: whatever is built here is what
- * POST /sales/:id/payment accepts.
+ * A request to charge a sale. It cannot exist with an invalid email, a Nequi
+ * number that is not 10 digits, or a card without its token: whatever is
+ * built here is what POST /sales/:id/payment accepts.
  */
 export class PaymentRequest {
   private constructor(
     readonly customerEmail: string,
-    readonly method: "NEQUI",
-    readonly phoneNumber: string,
+    readonly details: PaymentMethodDetails,
   ) {}
 
   /** Throws InvalidPaymentRequestError with the message of each wrong field. */
@@ -57,11 +85,29 @@ export class PaymentRequest {
     const issues = nequiPaymentIssues(values);
     if (Object.keys(issues).length > 0) throw new InvalidPaymentRequestError(issues);
 
-    return new PaymentRequest(
-      values.customerEmail.trim(),
-      "NEQUI",
-      normalizePhoneNumber(values.phoneNumber),
-    );
+    return new PaymentRequest(values.customerEmail.trim(), {
+      method: "NEQUI",
+      phoneNumber: normalizePhoneNumber(values.phoneNumber),
+    });
+  }
+
+  /** Throws InvalidPaymentRequestError for a wrong email or installments. */
+  static card(values: CardPaymentValues): PaymentRequest {
+    const issues: PaymentIssues = {};
+    const email = customerEmailIssue(values.customerEmail);
+    if (email !== undefined) issues.customerEmail = email;
+    const installments = installmentsIssue(values.installments);
+    if (installments !== undefined) issues.installments = installments;
+    if (Object.keys(issues).length > 0) throw new InvalidPaymentRequestError(issues);
+
+    const cardToken = values.cardToken.trim();
+    if (cardToken === "") throw new DomainError("Falta el token de la tarjeta.");
+
+    return new PaymentRequest(values.customerEmail.trim(), {
+      method: "CARD",
+      cardToken,
+      installments: values.installments,
+    });
   }
 }
 

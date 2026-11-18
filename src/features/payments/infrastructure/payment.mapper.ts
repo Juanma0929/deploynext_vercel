@@ -7,14 +7,18 @@ import {
 } from "../domain/errors";
 import type { PaymentRequest } from "../domain/payment-request";
 import type { StartedPayment } from "../domain/payment.repository";
-import type { ChargedSaleDto, CreateNequiPaymentDto } from "./dto/payment.dto";
+import type { ChargedSaleDto, CreatePaymentDto } from "./dto/payment.dto";
 
-export function toCreateNequiPaymentDto(request: PaymentRequest): CreateNequiPaymentDto {
-  return {
-    customerEmail: request.customerEmail,
-    method: request.method,
-    phoneNumber: request.phoneNumber,
-  };
+export function toCreatePaymentDto(request: PaymentRequest): CreatePaymentDto {
+  const { customerEmail, details } = request;
+  return details.method === "NEQUI"
+    ? { customerEmail, method: "NEQUI", phoneNumber: details.phoneNumber }
+    : {
+        customerEmail,
+        method: "CARD",
+        cardToken: details.cardToken,
+        installments: details.installments,
+      };
 }
 
 export function toStartedPayment(dto: ChargedSaleDto): StartedPayment {

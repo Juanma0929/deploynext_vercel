@@ -75,13 +75,18 @@ onSessionReset(() => useProductsStore.getState().reset());
 
 ## Excepción justificada: el cliente de Wompi
 
-`src/features/payments/infrastructure/wompi-client.ts` es el **único** segundo cliente HTTP del
-proyecto, y existe a propósito:
+`src/features/payments/infrastructure/wompi-card-tokenizer.ts` (`WompiCardTokenizer`) es el **único**
+segundo cliente HTTP del proyecto, y existe a propósito:
 
 - habla con Wompi, no con nuestra API, así que **no debe** enviar el JWT del usuario. Se autentica con
   la llave **pública** del comercio (`NEXT_PUBLIC_WOMPI_PUBLIC_KEY`);
-- tokeniza la tarjeta (o Nequi) directamente desde el navegador hacia Wompi, para que el número y el
-  CVC nunca pasen por nuestro backend. El backend solo recibe el token resultante;
-- las llaves privadas viven únicamente en el backend.
+- solo hace `POST /tokens/cards`: tokeniza la tarjeta directamente desde el navegador hacia Wompi,
+  para que el número y el CVC nunca pasen por nuestro backend. El backend solo recibe el token, en
+  `POST /sales/:id/payment` con `{ customerEmail, method: 'CARD', cardToken, installments }`;
+- los datos de la tarjeta no se guardan en ningún estado ni store: el formulario usa campos no
+  controlados, los lee una vez al enviar y se vacía al terminar;
+- las llaves privadas viven únicamente en el backend, que es quien cobra (también el `acceptance_token`
+  lo obtiene él).
 
-Solo `payments/di/wompi.ts` lo instancia. Cualquier otra llamada HTTP usa el cliente compartido.
+Solo `payments/di/container.ts` lo instancia. Cualquier otra llamada HTTP usa el cliente compartido,
+incluido el cobro con Nequi, que no pasa por Wompi desde el front.

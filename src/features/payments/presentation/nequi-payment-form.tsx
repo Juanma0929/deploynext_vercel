@@ -10,6 +10,7 @@ import {
   type PaymentIssues,
 } from "../domain/payment-request";
 import type { StartedPayment } from "../domain/payment.repository";
+import { ChargeStarted, NotChargeable } from "./payment-outcome";
 import { useChargeWithNequi } from "./use-charge-with-nequi";
 
 const INPUT_CLASS =
@@ -89,38 +90,16 @@ export function NequiPaymentForm({ saleId, totalLabel }: NequiPaymentFormProps) 
 
   if (started !== null) {
     return (
-      <div role="status" className="flex max-w-lg flex-col gap-3 rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950">
-        <p className="font-semibold">Cobro enviado a Nequi</p>
+      <ChargeStarted saleId={saleId} transactionId={started.transactionId} title="Cobro enviado a Nequi">
         <p>
           El cliente recibe una notificación en su app de Nequi para aceptar el pago de{" "}
           <strong>{totalLabel}</strong>. Mientras responde, la venta queda <strong>pendiente</strong>.
         </p>
-        {started.transactionId !== "" && (
-          <p>
-            Transacción de Wompi:{" "}
-            <span className="font-mono text-xs break-all">{started.transactionId}</span>
-          </p>
-        )}
-        <Link
-          href={`/ventas/${saleId}`}
-          className="bg-primary self-start rounded-md px-4 py-2 font-medium text-white"
-        >
-          Ver la venta
-        </Link>
-      </div>
+      </ChargeStarted>
     );
   }
 
-  if (notChargeable !== null) {
-    return (
-      <div role="alert" className="flex max-w-lg flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-        <p className="font-medium">{notChargeable}</p>
-        <Link href={`/ventas/${saleId}`} className="font-medium underline underline-offset-2">
-          Ver el estado de la venta
-        </Link>
-      </div>
-    );
-  }
+  if (notChargeable !== null) return <NotChargeable saleId={saleId} message={notChargeable} />;
 
   return (
     <form noValidate onSubmit={handleSubmit} className="flex max-w-lg flex-col gap-4">
