@@ -12,6 +12,8 @@ export const PERMISSIONS = [
   "suppliers:write",
   "sales:create",
   "sales:read-today",
+  /** Sees the sales of every seller, not only its own (GET /sales/today answers by role). */
+  "sales:read-all",
   "sales:history",
   "sales:cancel",
   "reports:read",
@@ -56,6 +58,7 @@ const ROUTE_RULES: readonly RouteRule[] = [
   { pattern: /^\/reportes(\/|$)/, permission: "reports:read" },
   { pattern: /^\/ventas\/historial(\/|$)/, permission: "sales:history" },
   { pattern: /^\/ventas\/nueva\/?$/, permission: "sales:create" },
+  { pattern: /^\/ventas\/?$/, permission: "sales:read-today" },
   { pattern: /^\/productos\/nuevo\/?$/, permission: "products:write" },
   { pattern: /^\/productos\/[^/]+\/editar\/?$/, permission: "products:write" },
   { pattern: /^\/productos(\/|$)/, permission: "products:read" },

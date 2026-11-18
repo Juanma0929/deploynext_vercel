@@ -70,6 +70,11 @@ export class Sale {
   get unitCount(): number {
     return this.lines.reduce((count, line) => count + line.quantity, 0);
   }
+
+  /** How many different products, one per line of the sale. */
+  get itemCount(): number {
+    return this.lines.length;
+  }
 }
 
 export interface SalesSummary {
