@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { Alert, Button, ModalActions } from "@/shared/presentation/ui";
+
 import type { User } from "../domain/user";
 import { useUsers } from "./use-users";
 
@@ -39,28 +41,19 @@ export function DeactivateUserConfirmation({ user, onDone, onCancel }: Deactivat
       </p>
 
       {error !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-red-700">
-          {error}
-        </p>
+        <Alert tone="danger">
+          <p>{error}</p>
+        </Alert>
       )}
 
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-100"
-        >
+      <ModalActions>
+        <Button variant="secondary" onClick={onCancel}>
           Cancelar
-        </button>
-        <button
-          type="button"
-          onClick={confirm}
-          disabled={isSaving}
-          className="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-60"
-        >
-          {isSaving ? "Desactivando…" : "Desactivar usuario"}
-        </button>
-      </div>
+        </Button>
+        <Button variant="danger" onClick={confirm} isLoading={isSaving} loadingText="Desactivando…">
+          Desactivar usuario
+        </Button>
+      </ModalActions>
     </div>
   );
 }

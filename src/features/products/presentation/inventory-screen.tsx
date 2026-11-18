@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { LinkPagination } from "@/shared/presentation/link-pagination";
+import { Alert, EmptyState, LinkPagination } from "@/shared/presentation/ui";
 
 import type { Inventory } from "../application/list-inventory.use-case";
 import { InventoryFilters } from "./inventory-filters";
@@ -47,12 +47,9 @@ export function InventoryScreen({ inventory, query, actions, deletedName }: Inve
 
       {deletedName !== undefined && deletedName !== "" && (
         // It goes away with the next filter or page: those links do not carry ?eliminado=.
-        <p
-          role="status"
-          className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900"
-        >
-          Se eliminó el producto {deletedName}.
-        </p>
+        <Alert tone="success">
+          <p>Se eliminó el producto {deletedName}.</p>
+        </Alert>
       )}
 
       {/* The key resets the fields when the URL changes, e.g. after "Quitar filtros". */}
@@ -64,11 +61,11 @@ export function InventoryScreen({ inventory, query, actions, deletedName }: Inve
       />
 
       {page.items.length === 0 ? (
-        <p className="text-muted rounded-md border border-dashed border-slate-300 p-6 text-center text-sm">
+        <EmptyState>
           {inventory.totalProducts === 0
             ? "Todavía no hay productos registrados."
             : "Ningún producto coincide con los filtros."}
-        </p>
+        </EmptyState>
       ) : (
         <InventoryTable rows={page.items} />
       )}

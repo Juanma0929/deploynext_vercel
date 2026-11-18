@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { Alert, ButtonLink } from "@/shared/presentation/ui";
+
 import { PaymentStatusPanel } from "./payment-status-panel";
 
 interface ChargeStartedProps {
@@ -33,12 +35,9 @@ export function ChargeStarted({ saleId, transactionId, title, children }: Charge
 
       <PaymentStatusPanel saleId={saleId} initialStatus="pending" />
 
-      <Link
-        href={`/ventas/${saleId}`}
-        className="self-start rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
-      >
+      <ButtonLink href={`/ventas/${saleId}`} variant="secondary" className="self-start">
         Ver la venta
-      </Link>
+      </ButtonLink>
     </div>
   );
 }
@@ -46,14 +45,11 @@ export function ChargeStarted({ saleId, transactionId, title, children }: Charge
 /** The API answered 409: this sale was charged, or is being charged, already. */
 export function NotChargeable({ saleId, message }: { readonly saleId: string; readonly message: string }) {
   return (
-    <div
-      role="alert"
-      className="flex max-w-lg flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
-    >
+    <Alert tone="warning" className="max-w-lg">
       <p className="font-medium">{message}</p>
       <Link href={`/ventas/${saleId}`} className="font-medium underline underline-offset-2">
         Ver el estado de la venta
       </Link>
-    </div>
+    </Alert>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent } from "react";
+
+import { Alert, Button, ButtonLink, Field, TextInput, describedBy } from "@/shared/presentation/ui";
 
 import {
   nequiPaymentIssues,
@@ -11,16 +12,13 @@ import {
 } from "../domain/payment-request";
 import type { StartedPayment } from "../domain/payment.repository";
 import { ChargeStarted, NotChargeable } from "./payment-outcome";
+import { SandboxOptions } from "./sandbox-options";
 import { useChargeWithNequi } from "./use-charge-with-nequi";
-
-const INPUT_CLASS =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none " +
-  "focus:border-primary focus:ring-2 focus:ring-primary/20 aria-[invalid=true]:border-red-500";
 
 /** The numbers of the Wompi sandbox: the result does not depend on any phone. */
 const SANDBOX_NUMBERS = [
-  { phoneNumber: "3991111111", label: "aprueba" },
-  { phoneNumber: "3992222222", label: "rechaza" },
+  { value: "3991111111", display: "3991111111", outcome: "aprueba" },
+  { value: "3992222222", display: "3992222222", outcome: "rechaza" },
 ] as const;
 
 interface NequiPaymentFormProps {
@@ -101,32 +99,39 @@ export function NequiPaymentForm({ saleId, totalLabel }: NequiPaymentFormProps) 
 
   if (notChargeable !== null) return <NotChargeable saleId={saleId} message={notChargeable} />;
 
+  const sandboxHint = (
+    <SandboxOptions
+      title="Números de prueba del sandbox:"
+      options={SANDBOX_NUMBERS}
+      onPick={(phoneNumber) => set("phoneNumber", phoneNumber)}
+    />
+  );
+
   return (
     <form noValidate onSubmit={handleSubmit} className="flex max-w-lg flex-col gap-4">
       {failure !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {failure.message}
-        </p>
+        <Alert tone="danger">
+          <p>{failure.message}</p>
+        </Alert>
       )}
 
-      <Field id={ids.customerEmail} label="Correo del cliente" error={issues.customerEmail}>
-        <input
+      <Field id={ids.customerEmail} label="Correo del cliente" error={issues.customerEmail} required>
+        <TextInput
           id={ids.customerEmail}
           name="customerEmail"
           type="email"
           autoComplete="off"
           value={values.customerEmail}
           onChange={(event) => set("customerEmail", event.target.value)}
-          aria-invalid={issues.customerEmail !== undefined}
-          aria-describedby={issues.customerEmail ? `${ids.customerEmail}-error` : undefined}
+          invalid={issues.customerEmail !== undefined}
+          aria-describedby={describedBy(ids.customerEmail, { error: issues.customerEmail })}
           aria-required
           placeholder="cliente@correo.com"
-          className={INPUT_CLASS}
         />
       </Field>
 
-      <Field id={ids.phoneNumber} label="Número de Nequi" error={issues.phoneNumber}>
-        <input
+      <Field id={ids.phoneNumber} label="Número de Nequi" error={issues.phoneNumber} hint={sandboxHint} required>
+        <TextInput
           id={ids.phoneNumber}
           name="phoneNumber"
           type="tel"
@@ -134,74 +139,21 @@ export function NequiPaymentForm({ saleId, totalLabel }: NequiPaymentFormProps) 
           autoComplete="off"
           value={values.phoneNumber}
           onChange={(event) => set("phoneNumber", event.target.value)}
-          aria-invalid={issues.phoneNumber !== undefined}
-          aria-describedby={
-            [`${ids.phoneNumber}-hint`, issues.phoneNumber ? `${ids.phoneNumber}-error` : ""]
-              .filter(Boolean)
-              .join(" ")
-          }
+          invalid={issues.phoneNumber !== undefined}
+          aria-describedby={describedBy(ids.phoneNumber, { hint: true, error: issues.phoneNumber })}
           aria-required
           placeholder="3001234567"
-          className={INPUT_CLASS}
         />
-        <div id={`${ids.phoneNumber}-hint`} className="text-muted flex flex-wrap items-center gap-2 text-xs">
-          <span>Números de prueba del sandbox:</span>
-          {SANDBOX_NUMBERS.map((sandbox) => (
-            <button
-              key={sandbox.phoneNumber}
-              type="button"
-              onClick={() => set("phoneNumber", sandbox.phoneNumber)}
-              className="rounded border border-slate-300 bg-white px-2 py-0.5 font-mono hover:bg-slate-100"
-            >
-              {sandbox.phoneNumber} <span className="font-sans">({sandbox.label})</span>
-            </button>
-          ))}
-        </div>
       </Field>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Link
-          href={`/ventas/${saleId}`}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
-        >
+        <ButtonLink href={`/ventas/${saleId}`} variant="secondary">
           Volver
-        </Link>
-        <button
-          type="submit"
-          disabled={isSending}
-          className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {isSending
-            ? "Enviando a Nequi…"
-            : failure?.canRetry
-              ? `Reintentar cobro de ${totalLabel}`
-              : `Cobrar ${totalLabel} con Nequi`}
-        </button>
+        </ButtonLink>
+        <Button type="submit" isLoading={isSending} loadingText="Enviando a Nequi…">
+          {failure?.canRetry ? `Reintentar cobro de ${totalLabel}` : `Cobrar ${totalLabel} con Nequi`}
+        </Button>
       </div>
     </form>
-  );
-}
-
-interface FieldProps {
-  readonly id: string;
-  readonly label: string;
-  readonly error: string | undefined;
-  readonly children: ReactNode;
-}
-
-function Field({ id, label, error, children }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-        <span className="text-red-600" aria-hidden="true"> *</span>
-      </label>
-      {children}
-      {error !== undefined && (
-        <p id={`${id}-error`} className="text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { listSupplierOptions } from "@/features/products/di/server";
 import { ProductForm } from "@/features/products/presentation";
+import { PageHeader } from "@/shared/presentation/ui";
 
 export const metadata: Metadata = {
   title: "Nuevo producto",
@@ -16,9 +17,7 @@ export default async function NewProductPage() {
 
   return (
     <section aria-labelledby="new-product-title" className="flex flex-col gap-6">
-      <h1 id="new-product-title" className="text-2xl font-semibold">
-        Nuevo producto
-      </h1>
+      <PageHeader titleId="new-product-title" title="Nuevo producto" />
       <ProductForm suppliers={suppliers} />
     </section>
   );

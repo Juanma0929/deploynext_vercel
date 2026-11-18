@@ -7,6 +7,7 @@ import {
   SESSION_EXPIRED_REASON,
   SESSION_REASON_PARAM,
 } from "@/shared/domain/session";
+import { Alert } from "@/shared/presentation/ui";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión",
@@ -26,12 +27,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <h1 className="mb-6 text-center text-xl font-semibold">StockPyme</h1>
 
         {sessionExpired && (
-          <p
-            role="alert"
-            className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-center text-sm text-amber-900"
-          >
-            {SESSION_EXPIRED_MESSAGE}
-          </p>
+          <Alert tone="warning" className="mb-6 text-center">
+            <p>{SESSION_EXPIRED_MESSAGE}</p>
+          </Alert>
         )}
 
         <ServerWakeUp>

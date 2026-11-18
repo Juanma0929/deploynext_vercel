@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
 
+import { Alert, Button, EmptyState, MoneyText, TextInput, describedBy, errorId } from "@/shared/presentation/ui";
+
 import type { DraftLine } from "../domain/sale-draft";
 import { useNewSale } from "./use-new-sale";
 
@@ -41,12 +43,12 @@ export function SaleCart() {
       </h2>
 
       {failure !== null && (
-        <div role="alert" className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+        <Alert tone="danger">
           <p className="font-medium">No se pudo registrar la venta.</p>
           <p>{failure.message}</p>
           {failure.adjustments.length > 0 && (
             <>
-              <p className="mt-2">Actualizamos los productos y ajustamos la venta:</p>
+              <p className="mt-1">Actualizamos los productos y ajustamos la venta:</p>
               <ul className="list-disc pl-5">
                 {failure.adjustments.map((adjustment) => (
                   <li key={adjustment.productName}>
@@ -58,16 +60,14 @@ export function SaleCart() {
               </ul>
             </>
           )}
-          <button type="button" onClick={dismissFailure} className="mt-2 font-medium underline">
+          <Button variant="link" onClick={dismissFailure} className="mt-1 self-start">
             Entendido
-          </button>
-        </div>
+          </Button>
+        </Alert>
       )}
 
       {draft.isEmpty ? (
-        <p className="text-muted rounded-md border border-dashed border-slate-300 p-6 text-center text-sm">
-          Agrega productos desde la lista para armar la venta.
-        </p>
+        <EmptyState>Agrega productos desde la lista para armar la venta.</EmptyState>
       ) : (
         <ul className="divide-y divide-slate-100">
           {draft.lines.map((line) => (
@@ -84,17 +84,18 @@ export function SaleCart() {
             calcula el servidor con los precios vigentes.
           </p>
         </div>
-        <p className="text-xl font-semibold tabular-nums">{draft.estimatedTotal.format()}</p>
+        <MoneyText value={draft.estimatedTotal} className="text-xl font-semibold" />
       </div>
 
-      <button
-        type="button"
+      <Button
         onClick={() => void handleSubmit()}
         disabled={!canSubmit}
-        className="bg-primary rounded-md px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+        isLoading={isSubmitting}
+        loadingText="Registrando venta…"
+        className="py-2.5"
       >
-        {isSubmitting ? "Registrando venta…" : "Registrar venta"}
-      </button>
+        Registrar venta
+      </Button>
     </section>
   );
 }
@@ -146,26 +147,27 @@ function CartLine({ line, onValidityChange }: CartLineProps) {
         <div className="min-w-0">
           <p className="font-medium">{product.name}</p>
           <p className="text-muted text-xs">
-            {product.salePrice.format()} c/u · stock {product.currentStock}
+            <MoneyText value={product.salePrice} /> c/u · stock {product.currentStock}
           </p>
         </div>
-        <p className="tabular-nums">{line.estimatedSubtotal.format()}</p>
+        <MoneyText value={line.estimatedSubtotal} />
       </div>
 
       <div className="flex items-center gap-2">
         <label htmlFor={quantityId} className="sr-only">
           Cantidad de {product.name}
         </label>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => step(-1)}
           disabled={line.quantity <= 1}
           aria-label={`Quitar una unidad de ${product.name}`}
-          className="size-8 rounded-md border border-slate-300 hover:bg-slate-100 disabled:opacity-40"
+          className="size-8 p-0"
         >
           −
-        </button>
-        <input
+        </Button>
+        <TextInput
           id={quantityId}
           type="number"
           inputMode="numeric"
@@ -174,30 +176,27 @@ function CartLine({ line, onValidityChange }: CartLineProps) {
           step={1}
           value={text}
           onChange={(event) => commit(event.target.value)}
-          aria-invalid={error !== null}
-          aria-describedby={error !== null ? `${quantityId}-error` : undefined}
-          className="focus:border-primary w-16 rounded-md border border-slate-300 px-2 py-1 text-center tabular-nums outline-none aria-[invalid=true]:border-red-500"
+          invalid={error !== null}
+          aria-describedby={describedBy(quantityId, { error })}
+          className="w-16 px-2 py-1 text-center tabular-nums"
         />
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => step(1)}
           disabled={line.quantity >= product.currentStock}
           aria-label={`Agregar una unidad de ${product.name}`}
-          className="size-8 rounded-md border border-slate-300 hover:bg-slate-100 disabled:opacity-40"
+          className="size-8 p-0"
         >
           +
-        </button>
-        <button
-          type="button"
-          onClick={() => remove(product.id)}
-          className="ml-auto text-xs font-medium text-red-600 hover:underline"
-        >
+        </Button>
+        <Button variant="link" onClick={() => remove(product.id)} className="ml-auto text-xs text-red-600">
           Quitar
-        </button>
+        </Button>
       </div>
 
       {error !== null && (
-        <p id={`${quantityId}-error`} className="text-xs text-red-600">
+        <p id={errorId(quantityId)} className="text-xs text-red-600">
           {error}
         </p>
       )}

@@ -17,7 +17,8 @@ export interface ProductQuickActions {
   readonly stockIssue: string | null;
   /** Resolves true when the stock was saved (or did not change). */
   readonly adjustStock: (newStock: string) => Promise<boolean>;
-  readonly toggleActive: () => Promise<void>;
+  /** Resolves true when the product was activated or deactivated. */
+  readonly toggleActive: () => Promise<boolean>;
 }
 
 /**
@@ -59,8 +60,10 @@ export function useProductQuickActions(current: ProductProps): ProductQuickActio
     try {
       await productsContainer().setProductActive.execute(new Product(current), !current.isActive);
       router.refresh();
+      return true;
     } catch (cause: unknown) {
       setError(errorMessage(cause));
+      return false;
     } finally {
       setIsWorking(false);
     }

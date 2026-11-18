@@ -2,6 +2,19 @@
 
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
 
+import { normalizeForSearch } from "@/shared/domain/text";
+import {
+  Alert,
+  Button,
+  EmptyState,
+  Field,
+  LoadingText,
+  MoneyText,
+  RetryAlert,
+  TextInput,
+  describedBy,
+} from "@/shared/presentation/ui";
+
 import type { SaleProduct } from "../domain/sale-product";
 import { useNewSale } from "./use-new-sale";
 
@@ -45,11 +58,8 @@ export function ProductPicker() {
         Productos
       </h2>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor={searchId} className="text-xs font-medium">
-          Buscar producto
-        </label>
-        <input
+      <Field id={searchId} label="Buscar producto" hint="Solo se muestran productos activos con stock.">
+        <TextInput
           id={searchId}
           type="search"
           placeholder="Nombre, categoría o código de barras"
@@ -60,39 +70,25 @@ export function ProductPicker() {
           }}
           onKeyDown={handleKeyDown}
           autoComplete="off"
-          className="focus:border-primary focus:ring-primary/20 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2"
+          aria-describedby={describedBy(searchId, { hint: true })}
         />
-        <p className="text-muted text-xs">Solo se muestran productos activos con stock.</p>
-      </div>
+      </Field>
 
       {error !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <Alert tone="danger">
+          <p>{error}</p>
+        </Alert>
       )}
 
-      {products.status === "loading" && (
-        <p role="status" className="text-muted text-sm">
-          Cargando productos…
-        </p>
-      )}
+      {products.status === "loading" && <LoadingText>Cargando productos…</LoadingText>}
 
-      {products.status === "error" && (
-        <div role="alert" className="flex items-center gap-3 text-sm">
-          <p>{products.message}</p>
-          <button type="button" onClick={reloadProducts} className="font-medium underline">
-            Reintentar
-          </button>
-        </div>
-      )}
+      {products.status === "error" && <RetryAlert message={products.message} onRetry={reloadProducts} />}
 
       {all !== null &&
         (matches.length === 0 ? (
-          <p className="text-muted rounded-md border border-dashed border-slate-300 p-6 text-center text-sm">
-            {all.length === 0
-              ? "No hay productos disponibles para la venta."
-              : "Ningún producto coincide con la búsqueda."}
-          </p>
+          <EmptyState>
+            {all.length === 0 ? "No hay productos disponibles para la venta." : "Ningún producto coincide con la búsqueda."}
+          </EmptyState>
         ) : (
           <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
             {matches.slice(0, VISIBLE_LIMIT).map((product) => {
@@ -103,19 +99,20 @@ export function ProductPicker() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{product.name}</p>
                     <p className="text-muted text-xs">
-                      {product.salePrice.format()} · {remaining} disponibles
+                      <MoneyText value={product.salePrice} /> · {remaining} disponibles
                       {inCart > 0 && ` · ${inCart} en la venta`}
                     </p>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => addProduct(product)}
                     disabled={remaining === 0}
                     aria-label={`Agregar ${product.name}`}
-                    className="text-primary border-primary/40 hover:bg-primary/5 rounded-md border px-3 py-1.5 font-medium disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                    className="text-primary border-primary/40"
                   >
                     {remaining === 0 ? "Sin más stock" : "Agregar"}
-                  </button>
+                  </Button>
                 </li>
               );
             })}
@@ -132,13 +129,9 @@ export function ProductPicker() {
 }
 
 function search(products: readonly SaleProduct[], term: string): SaleProduct[] {
-  const needle = normalize(term);
+  const needle = normalizeForSearch(term);
   if (needle === "") return [...products];
   return products.filter((product) =>
-    normalize([product.name, product.category, product.barcode].join(" ")).includes(needle),
+    normalizeForSearch([product.name, product.category, product.barcode].join(" ")).includes(needle),
   );
-}
-
-function normalize(text: string): string {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
 }

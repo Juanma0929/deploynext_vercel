@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+
+import { Alert, Button, ButtonLink, Spinner } from "@/shared/presentation/ui";
 
 import type { SalePaymentStatus } from "../domain/payment-status";
 import { usePaymentStatus } from "./use-payment-status";
@@ -31,15 +31,18 @@ export function PaymentStatusPanel({ saleId, initialStatus, refreshOnSettle = fa
     refreshOnSettle ? { onSettled: () => router.refresh() } : {},
   );
 
+  const retryButton = (label: string) => (
+    <Button variant="secondary" size="sm" onClick={retry} className="mt-1 self-start">
+      {label}
+    </Button>
+  );
+
   switch (state.phase) {
     case "checking":
       return (
-        <Box tone="info" role="status">
+        <Alert tone="info" role="status" className="max-w-lg">
           <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="border-primary size-5 shrink-0 animate-spin rounded-full border-2 border-t-transparent"
-            />
+            <Spinner size="sm" />
             <div>
               <p className="font-medium">Esperando la respuesta del pago…</p>
               <p className="text-xs">
@@ -47,111 +50,68 @@ export function PaymentStatusPanel({ saleId, initialStatus, refreshOnSettle = fa
               </p>
             </div>
           </div>
-        </Box>
+        </Alert>
       );
 
     case "paid":
       return (
-        <Box tone="success" role="status">
+        <Alert tone="success" className="max-w-lg">
           <p className="font-medium">Pago aprobado.</p>
           <p>La venta quedó pagada.</p>
-        </Box>
+        </Alert>
       );
 
     case "declined":
       return (
-        <Box tone="danger" role="alert">
+        <Alert tone="danger" className="max-w-lg">
           <p className="font-medium">El pago fue rechazado.</p>
           <p>
             La venta quedó rechazada y el stock de sus productos volvió al inventario. Una venta se cobra
             una sola vez: para intentarlo de nuevo, registra una venta nueva.
           </p>
-          <Link
-            href={NEW_SALE_FROM(saleId)}
-            className="bg-primary mt-1 self-start rounded-md px-4 py-2 font-medium text-white"
-          >
+          <ButtonLink href={NEW_SALE_FROM(saleId)} size="sm" className="mt-1 self-start">
             Crear nueva venta con los mismos productos
-          </Link>
-        </Box>
+          </ButtonLink>
+        </Alert>
       );
 
     case "cancelled":
       return (
-        <Box tone="neutral" role="status">
+        <Alert tone="neutral" className="max-w-lg">
           <p className="font-medium">La venta fue cancelada.</p>
-        </Box>
+        </Alert>
       );
 
     case "timeout":
       return (
-        <Box tone="warning" role="status">
+        <Alert tone="warning" role="status" className="max-w-lg">
           <p className="font-medium">El pago sigue pendiente.</p>
           <p>Wompi todavía no tiene una respuesta. Si el cliente ya aceptó o rechazó, verifica de nuevo.</p>
-          <RetryButton onClick={retry}>Verificar de nuevo</RetryButton>
-        </Box>
+          {retryButton("Verificar de nuevo")}
+        </Alert>
       );
 
     case "gateway-error":
       return (
-        <Box tone="warning" role="alert">
+        <Alert tone="warning" className="max-w-lg">
           <p className="font-medium">{state.message}</p>
-          <RetryButton onClick={retry}>Reintentar</RetryButton>
-        </Box>
+          {retryButton("Reintentar")}
+        </Alert>
       );
 
     case "no-payment":
       return (
-        <Box tone="neutral" role="status">
+        <Alert tone="neutral" className="max-w-lg">
           <p>{state.message}</p>
-        </Box>
+        </Alert>
       );
 
     case "error":
       return (
-        <Box tone="danger" role="alert">
+        <Alert tone="danger" className="max-w-lg">
           <p>{state.message}</p>
-          <RetryButton onClick={retry}>Verificar de nuevo</RetryButton>
-        </Box>
+          {retryButton("Verificar de nuevo")}
+        </Alert>
       );
   }
-}
-
-const TONES = {
-  info: "border-sky-300 bg-sky-50 text-sky-950",
-  success: "border-emerald-300 bg-emerald-50 text-emerald-950",
-  danger: "border-red-300 bg-red-50 text-red-950",
-  warning: "border-amber-300 bg-amber-50 text-amber-950",
-  neutral: "border-slate-300 bg-slate-50 text-slate-900",
-} as const;
-
-function Box({
-  tone,
-  role,
-  children,
-}: {
-  readonly tone: keyof typeof TONES;
-  readonly role: "status" | "alert";
-  readonly children: ReactNode;
-}) {
-  return (
-    <div
-      role={role}
-      aria-live="polite"
-      className={`flex max-w-lg flex-col gap-2 rounded-lg border p-4 text-sm ${TONES[tone]}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-function RetryButton({ onClick, children }: { readonly onClick: () => void; readonly children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="self-start rounded-md border border-current px-4 py-2 font-medium hover:bg-white/50"
-    >
-      {children}
-    </button>
-  );
 }

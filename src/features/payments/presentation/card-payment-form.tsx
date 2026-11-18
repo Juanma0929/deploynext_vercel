@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
+
+import { Alert, Button, ButtonLink, Field, Select, TextInput, describedBy } from "@/shared/presentation/ui";
 
 import type { StartedCardPayment } from "../application/charge-with-card.use-case";
 import {
@@ -12,16 +13,13 @@ import {
 } from "../domain/card-details";
 import { MAX_INSTALLMENTS, MIN_INSTALLMENTS } from "../domain/payment-request";
 import { ChargeStarted, NotChargeable } from "./payment-outcome";
+import { SandboxOptions } from "./sandbox-options";
 import { useChargeWithCard } from "./use-charge-with-card";
-
-const INPUT_CLASS =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none " +
-  "focus:border-primary focus:ring-2 focus:ring-primary/20 aria-[invalid=true]:border-red-500";
 
 /** The cards of the Wompi sandbox: the result depends only on the number. */
 const SANDBOX_CARDS = [
-  { number: "4242 4242 4242 4242", label: "aprueba" },
-  { number: "4111 1111 1111 1111", label: "rechaza" },
+  { value: "4242 4242 4242 4242", display: "4242…4242", outcome: "aprueba" },
+  { value: "4111 1111 1111 1111", display: "4111…1111", outcome: "rechaza" },
 ] as const;
 
 const INSTALLMENT_OPTIONS = Array.from(
@@ -126,8 +124,14 @@ export function CardPaymentForm({ saleId, totalLabel }: CardPaymentFormProps) {
 
   if (notChargeable !== null) return <NotChargeable saleId={saleId} message={notChargeable} />;
 
-  const describedBy = (field: CardPaymentField, extra = "") =>
-    [extra, issues[field] ? `${ids[field]}-error` : ""].filter(Boolean).join(" ") || undefined;
+  /** The props every card field shares: its id, its error and the aria wiring. */
+  const control = (field: CardPaymentField, hint = false) => ({
+    id: ids[field],
+    name: field,
+    invalid: issues[field] !== undefined,
+    "aria-describedby": describedBy(ids[field], { hint, error: issues[field] }),
+    "aria-required": true,
+  });
 
   return (
     <form
@@ -138,126 +142,65 @@ export function CardPaymentForm({ saleId, totalLabel }: CardPaymentFormProps) {
       className="flex max-w-lg flex-col gap-4"
     >
       {failure !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {failure.message}
-        </p>
+        <Alert tone="danger">
+          <p>{failure.message}</p>
+        </Alert>
       )}
 
-      <Field id={ids.customerEmail} label="Correo del cliente" error={issues.customerEmail}>
-        <input
-          id={ids.customerEmail}
-          name="customerEmail"
-          type="email"
-          aria-invalid={issues.customerEmail !== undefined}
-          aria-describedby={describedBy("customerEmail")}
-          aria-required
-          placeholder="cliente@correo.com"
-          className={INPUT_CLASS}
-        />
+      <Field id={ids.customerEmail} label="Correo del cliente" error={issues.customerEmail} required>
+        <TextInput {...control("customerEmail")} type="email" placeholder="cliente@correo.com" />
       </Field>
 
-      <Field id={ids.cardNumber} label="Número de la tarjeta" error={issues.cardNumber}>
-        <input
-          id={ids.cardNumber}
-          name="cardNumber"
+      <Field
+        id={ids.cardNumber}
+        label="Número de la tarjeta"
+        error={issues.cardNumber}
+        required
+        hint={
+          <SandboxOptions title="Tarjetas de prueba del sandbox:" options={SANDBOX_CARDS} onPick={fillSandboxCard} />
+        }
+      >
+        <TextInput
+          {...control("cardNumber", true)}
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          aria-invalid={issues.cardNumber !== undefined}
-          aria-describedby={describedBy("cardNumber", `${ids.cardNumber}-hint`)}
-          aria-required
           placeholder="4242 4242 4242 4242"
-          className={`${INPUT_CLASS} font-mono`}
+          className="font-mono"
         />
-        <div id={`${ids.cardNumber}-hint`} className="text-muted flex flex-wrap items-center gap-2 text-xs">
-          <span>Tarjetas de prueba del sandbox:</span>
-          {SANDBOX_CARDS.map((card) => (
-            <button
-              key={card.number}
-              type="button"
-              onClick={() => fillSandboxCard(card.number)}
-              className="rounded border border-slate-300 bg-white px-2 py-0.5 font-mono hover:bg-slate-100"
-            >
-              {card.number.slice(0, 4)}…{card.number.slice(-4)}{" "}
-              <span className="font-sans">({card.label})</span>
-            </button>
-          ))}
-        </div>
       </Field>
 
       <div className="grid grid-cols-3 gap-3">
-        <Field id={ids.expMonth} label="Mes" error={issues.expMonth}>
-          <input
-            id={ids.expMonth}
-            name="expMonth"
-            type="text"
-            inputMode="numeric"
-            maxLength={2}
-            aria-invalid={issues.expMonth !== undefined}
-            aria-describedby={describedBy("expMonth")}
-            aria-required
-            placeholder="MM"
-            className={INPUT_CLASS}
-          />
+        <Field id={ids.expMonth} label="Mes" error={issues.expMonth} required>
+          <TextInput {...control("expMonth")} type="text" inputMode="numeric" maxLength={2} placeholder="MM" />
         </Field>
-        <Field id={ids.expYear} label="Año" error={issues.expYear}>
-          <input
-            id={ids.expYear}
-            name="expYear"
-            type="text"
-            inputMode="numeric"
-            maxLength={4}
-            aria-invalid={issues.expYear !== undefined}
-            aria-describedby={describedBy("expYear")}
-            aria-required
-            placeholder="AA"
-            className={INPUT_CLASS}
-          />
+        <Field id={ids.expYear} label="Año" error={issues.expYear} required>
+          <TextInput {...control("expYear")} type="text" inputMode="numeric" maxLength={4} placeholder="AA" />
         </Field>
-        <Field id={ids.cvc} label="CVC" error={issues.cvc}>
-          <input
-            id={ids.cvc}
-            name="cvc"
+        <Field id={ids.cvc} label="CVC" error={issues.cvc} required>
+          <TextInput
+            {...control("cvc")}
             type="password"
             inputMode="numeric"
             maxLength={4}
             autoComplete="off"
-            aria-invalid={issues.cvc !== undefined}
-            aria-describedby={describedBy("cvc")}
-            aria-required
             placeholder="123"
-            className={INPUT_CLASS}
           />
         </Field>
       </div>
 
-      <Field id={ids.cardHolder} label="Nombre en la tarjeta" error={issues.cardHolder}>
-        <input
-          id={ids.cardHolder}
-          name="cardHolder"
-          type="text"
-          aria-invalid={issues.cardHolder !== undefined}
-          aria-describedby={describedBy("cardHolder")}
-          aria-required
-          className={INPUT_CLASS}
-        />
+      <Field id={ids.cardHolder} label="Nombre en la tarjeta" error={issues.cardHolder} required>
+        <TextInput {...control("cardHolder")} type="text" />
       </Field>
 
-      <Field id={ids.installments} label="Cuotas" error={issues.installments}>
-        <select
-          id={ids.installments}
-          name="installments"
-          defaultValue="1"
-          aria-invalid={issues.installments !== undefined}
-          aria-describedby={describedBy("installments")}
-          className={INPUT_CLASS}
-        >
+      <Field id={ids.installments} label="Cuotas" error={issues.installments} required>
+        <Select {...control("installments")} defaultValue="1">
           {INSTALLMENT_OPTIONS.map((count) => (
             <option key={count} value={count}>
               {count === 1 ? "1 cuota" : `${count} cuotas`}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <p className="text-muted text-xs">
@@ -265,23 +208,12 @@ export function CardPaymentForm({ saleId, totalLabel }: CardPaymentFormProps) {
       </p>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Link
-          href={`/ventas/${saleId}`}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
-        >
+        <ButtonLink href={`/ventas/${saleId}`} variant="secondary">
           Volver
-        </Link>
-        <button
-          type="submit"
-          disabled={isSending}
-          className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {isSending
-            ? "Cobrando…"
-            : failure?.canRetry
-              ? `Reintentar cobro de ${totalLabel}`
-              : `Cobrar ${totalLabel} con tarjeta`}
-        </button>
+        </ButtonLink>
+        <Button type="submit" isLoading={isSending} loadingText="Cobrando…">
+          {failure?.canRetry ? `Reintentar cobro de ${totalLabel}` : `Cobrar ${totalLabel} con tarjeta`}
+        </Button>
       </div>
     </form>
   );
@@ -303,28 +235,4 @@ function readValues(form: HTMLFormElement): CardPaymentFormValues {
     cardHolder: text("cardHolder"),
     installments: text("installments"),
   };
-}
-
-interface FieldProps {
-  readonly id: string;
-  readonly label: string;
-  readonly error: string | undefined;
-  readonly children: ReactNode;
-}
-
-function Field({ id, label, error, children }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-        <span className="text-red-600" aria-hidden="true"> *</span>
-      </label>
-      {children}
-      {error !== undefined && (
-        <p id={`${id}-error`} className="text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
-  );
 }

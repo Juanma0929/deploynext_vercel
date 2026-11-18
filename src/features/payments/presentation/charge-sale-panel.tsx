@@ -2,6 +2,8 @@
 
 import { useId, useState } from "react";
 
+import { buttonClasses, cn } from "@/shared/presentation/ui";
+
 import { CardPaymentForm } from "./card-payment-form";
 import { NequiPaymentForm } from "./nequi-payment-form";
 
@@ -34,11 +36,11 @@ export function ChargeSalePanel({ saleId, totalLabel }: ChargeSalePanelProps) {
           {METHODS.map((option) => (
             <label
               key={option.value}
-              className={`cursor-pointer rounded-md border px-4 py-2 text-sm font-medium ${
-                method === option.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-slate-300 bg-white hover:bg-slate-100"
-              }`}
+              className={cn(
+                buttonClasses("secondary"),
+                "has-focus-visible:ring-primary/40 cursor-pointer has-focus-visible:ring-2",
+                method === option.value && "border-primary bg-primary/10 text-primary hover:bg-primary/10",
+              )}
             >
               <input
                 type="radio"

@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
-import { Dialog } from "@/shared/presentation/dialog";
+import { Alert, Button, ButtonLink, Modal, ModalActions } from "@/shared/presentation/ui";
 
 import { salesContainer } from "../di/container";
 import { SaleNotCancellableError } from "../domain/errors";
@@ -73,33 +72,21 @@ export function SaleActions({ saleId, isAwaitingPayment, canCancel }: SaleAction
       {isAwaitingPayment && (
         <div className="flex gap-2">
           {canCancel && (
-            <button
-              type="button"
-              onClick={openConfirmation}
-              className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-            >
+            <Button variant="danger-outline" onClick={openConfirmation}>
               Cancelar venta
-            </button>
+            </Button>
           )}
-          <Link
-            href={`/ventas/${saleId}/cobrar`}
-            className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white"
-          >
-            Cobrar
-          </Link>
+          <ButtonLink href={`/ventas/${saleId}/cobrar`}>Cobrar</ButtonLink>
         </div>
       )}
 
       {outcome?.kind === "cancelled" && (
-        <p
-          role="status"
-          className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900"
-        >
-          La venta se canceló y el stock de sus productos volvió al inventario.
-        </p>
+        <Alert tone="success">
+          <p>La venta se canceló y el stock de sus productos volvió al inventario.</p>
+        </Alert>
       )}
 
-      <Dialog open={isConfirming} title="¿Cancelar esta venta?" onClose={() => setIsConfirming(false)}>
+      <Modal open={isConfirming} title="¿Cancelar esta venta?" onClose={() => setIsConfirming(false)}>
         <div className="flex flex-col gap-4 text-sm">
           <p>
             La venta quedará <strong>cancelada</strong> y{" "}
@@ -108,42 +95,35 @@ export function SaleActions({ saleId, isAwaitingPayment, canCancel }: SaleAction
           </p>
 
           {outcome?.kind === "conflict" && (
-            <div
-              role="alert"
-              className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900"
-            >
+            <Alert tone="warning">
               <p className="font-medium">{outcome.message}</p>
-              <p className="mt-1">Actualizamos la venta para que veas su estado actual.</p>
-            </div>
+              <p>Actualizamos la venta para que veas su estado actual.</p>
+            </Alert>
           )}
 
           {outcome?.kind === "error" && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-red-700">
-              {outcome.message}
-            </p>
+            <Alert tone="danger">
+              <p>{outcome.message}</p>
+            </Alert>
           )}
 
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsConfirming(false)}
-              className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-100"
-            >
+          <ModalActions>
+            <Button variant="secondary" onClick={() => setIsConfirming(false)}>
               {canConfirm ? "Volver" : "Cerrar"}
-            </button>
+            </Button>
             {canConfirm && (
-              <button
-                type="button"
+              <Button
+                variant="danger"
                 onClick={() => void cancel()}
-                disabled={isCancelling}
-                className="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                isLoading={isCancelling}
+                loadingText="Cancelando…"
               >
-                {isCancelling ? "Cancelando…" : "Sí, cancelar venta"}
-              </button>
+                Sí, cancelar venta
+              </Button>
             )}
-          </div>
+          </ModalActions>
         </div>
-      </Dialog>
+      </Modal>
     </div>
   );
 }

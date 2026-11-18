@@ -2,6 +2,8 @@
 
 import { useId, useState, type FormEvent } from "react";
 
+import { Alert, Button, Panel, TextInput, describedBy, errorId, useToast } from "@/shared/presentation/ui";
+
 import type { ProductProps } from "../domain/product";
 import { useProductQuickActions } from "./use-product-quick-actions";
 
@@ -13,33 +15,32 @@ interface ProductQuickActionsProps {
 /**
  * The two changes an admin makes most often without opening the form: setting
  * the stock after counting the shelf, and activating or deactivating the
- * product. Each one sends a single field.
+ * product. Each one sends a single field, and confirms with a toast.
  */
 export function ProductQuickActions({ product }: ProductQuickActionsProps) {
   const actions = useProductQuickActions(product);
+  const { toast } = useToast();
   const stockId = useId();
   const [stock, setStock] = useState(String(product.currentStock));
-  const [saved, setSaved] = useState(false);
 
   async function handleStock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaved(false);
-    setSaved(await actions.adjustStock(stock));
+    if (await actions.adjustStock(stock)) toast({ tone: "success", message: "Stock guardado." });
+  }
+
+  async function handleToggle() {
+    const wasActive = product.isActive;
+    if (await actions.toggleActive()) {
+      toast({ tone: "success", message: wasActive ? "Producto desactivado." : "Producto activado." });
+    }
   }
 
   return (
-    <section
-      aria-labelledby="quick-actions-title"
-      className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4"
-    >
-      <h2 id="quick-actions-title" className="font-semibold">
-        Ajustes rápidos
-      </h2>
-
+    <Panel title="Ajustes rápidos" titleId="quick-actions-title" className="gap-4">
       {actions.error !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {actions.error}
-        </p>
+        <Alert tone="danger">
+          <p>{actions.error}</p>
+        </Alert>
       )}
 
       <form noValidate onSubmit={handleStock} className="flex flex-wrap items-end gap-3">
@@ -47,35 +48,23 @@ export function ProductQuickActions({ product }: ProductQuickActionsProps) {
           <label htmlFor={stockId} className="text-sm font-medium">
             Stock actual
           </label>
-          <input
+          <TextInput
             id={stockId}
             type="text"
             inputMode="numeric"
             autoComplete="off"
             value={stock}
-            onChange={(event) => {
-              setStock(event.target.value);
-              setSaved(false);
-            }}
-            aria-invalid={actions.stockIssue !== null}
-            aria-describedby={actions.stockIssue !== null ? `${stockId}-error` : undefined}
-            className="focus:border-primary focus:ring-primary/20 w-32 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:ring-2 aria-[invalid=true]:border-red-500"
+            onChange={(event) => setStock(event.target.value)}
+            invalid={actions.stockIssue !== null}
+            aria-describedby={describedBy(stockId, { error: actions.stockIssue })}
+            className="w-32 tabular-nums"
           />
         </div>
-        <button
-          type="submit"
-          disabled={actions.isWorking}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-60"
-        >
+        <Button type="submit" variant="secondary" disabled={actions.isWorking}>
           Guardar stock
-        </button>
-        {saved && (
-          <p role="status" className="py-2 text-sm text-emerald-700">
-            Stock guardado.
-          </p>
-        )}
+        </Button>
         {actions.stockIssue !== null && (
-          <p id={`${stockId}-error`} className="w-full text-xs text-red-600">
+          <p id={errorId(stockId)} className="w-full text-xs text-red-600">
             {actions.stockIssue}
           </p>
         )}
@@ -87,21 +76,16 @@ export function ProductQuickActions({ product }: ProductQuickActionsProps) {
             ? "El producto está activo: se puede vender."
             : "El producto está inactivo: sigue en el inventario, pero no se puede vender."}
         </p>
-        <button
-          type="button"
+        <Button
           role="switch"
           aria-checked={product.isActive}
-          onClick={() => void actions.toggleActive()}
+          variant={product.isActive ? "danger-outline" : "primary"}
+          onClick={() => void handleToggle()}
           disabled={actions.isWorking}
-          className={`rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60 ${
-            product.isActive
-              ? "border border-red-300 text-red-700 hover:bg-red-50"
-              : "bg-primary text-white"
-          }`}
         >
           {product.isActive ? "Desactivar" : "Activar"}
-        </button>
+        </Button>
       </div>
-    </section>
+    </Panel>
   );
 }

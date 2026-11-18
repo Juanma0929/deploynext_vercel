@@ -7,6 +7,7 @@ import {
   type SupplierProps,
 } from "@/features/suppliers/di/server";
 import { SupplierForm } from "@/features/suppliers/presentation";
+import { PageHeader } from "@/shared/presentation/ui";
 
 interface EditSupplierPageProps {
   readonly params: Promise<{ readonly id: string }>;
@@ -40,9 +41,7 @@ export default async function EditSupplierPage({ params }: EditSupplierPageProps
 
   return (
     <section aria-labelledby="edit-supplier-title" className="flex flex-col gap-6">
-      <h1 id="edit-supplier-title" className="text-2xl font-semibold">
-        Editar proveedor
-      </h1>
+      <PageHeader titleId="edit-supplier-title" title="Editar proveedor" />
       <SupplierForm supplier={supplier} />
     </section>
   );

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
-import { Dialog } from "@/shared/presentation/dialog";
+import { Alert, Button, Modal, ModalActions } from "@/shared/presentation/ui";
 
 import { suppliersContainer } from "../di/container";
 import { SupplierHasProductsError, SupplierNotFoundError } from "../domain/errors";
@@ -61,15 +61,11 @@ export function DeleteSupplierButton({ supplierId, supplierName }: DeleteSupplie
 
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-      >
+      <Button variant="danger-outline" onClick={open}>
         Eliminar
-      </button>
+      </Button>
 
-      <Dialog open={isOpen} title="¿Eliminar este proveedor?" onClose={() => setIsOpen(false)}>
+      <Modal open={isOpen} title="¿Eliminar este proveedor?" onClose={() => setIsOpen(false)}>
         <div className="flex flex-col gap-4 text-sm">
           <p>
             Vas a eliminar a <span className="font-medium">{supplierName}</span>. Esta acción no se
@@ -77,9 +73,9 @@ export function DeleteSupplierButton({ supplierId, supplierName }: DeleteSupplie
           </p>
 
           {failure?.kind === "has-products" && (
-            <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900">
+            <Alert tone="warning">
               <p className="font-medium">{failure.message}</p>
-              <p className="mt-1">
+              <p>
                 Para eliminarlo, primero asigna esos productos a otro proveedor o elimínalos.{" "}
                 <a
                   href={`#${SUPPLIER_PRODUCTS_ANCHOR}`}
@@ -89,36 +85,27 @@ export function DeleteSupplierButton({ supplierId, supplierName }: DeleteSupplie
                   Ver sus productos
                 </a>
               </p>
-            </div>
+            </Alert>
           )}
 
           {failure?.kind === "other" && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-red-700">
-              {failure.message}
-            </p>
+            <Alert tone="danger">
+              <p>{failure.message}</p>
+            </Alert>
           )}
 
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-100"
-            >
+          <ModalActions>
+            <Button variant="secondary" onClick={() => setIsOpen(false)}>
               {failure?.kind === "has-products" ? "Cerrar" : "Cancelar"}
-            </button>
+            </Button>
             {failure?.kind !== "has-products" && (
-              <button
-                type="button"
-                onClick={confirm}
-                disabled={isDeleting}
-                className="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {isDeleting ? "Eliminando…" : "Eliminar proveedor"}
-              </button>
+              <Button variant="danger" onClick={confirm} isLoading={isDeleting} loadingText="Eliminando…">
+                Eliminar proveedor
+              </Button>
             )}
-          </div>
+          </ModalActions>
         </div>
-      </Dialog>
+      </Modal>
     </>
   );
 }
