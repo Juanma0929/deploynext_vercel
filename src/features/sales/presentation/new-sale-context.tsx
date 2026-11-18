@@ -24,10 +24,17 @@ export interface SubmitFailure {
 
 export type SubmitResult = { readonly ok: true; readonly saleId: string } | { readonly ok: false };
 
+/** How the cart was filled from an earlier sale (?desde=), if it was. */
+export type PrefillState =
+  | { readonly status: "copied"; readonly adjustments: readonly DraftAdjustment[] }
+  | { readonly status: "failed"; readonly message: string };
+
 export interface NewSaleContextValue {
   readonly products: ProductsState;
   readonly draft: SaleDraft;
   readonly failure: SubmitFailure | null;
+  /** Null when the sale was started empty. */
+  readonly prefill: PrefillState | null;
   readonly isSubmitting: boolean;
   readonly reloadProducts: () => void;
   /** Each returns the message to show when the domain refuses the change, or null. */
@@ -40,30 +47,63 @@ export interface NewSaleContextValue {
 
 export const NewSaleContext = createContext<NewSaleContextValue | null>(null);
 
+interface NewSaleProviderProps {
+  readonly children: ReactNode;
+  /**
+   * An earlier sale whose items fill the cart, as when a declined sale is
+   * tried again: a sale is charged only once, so the retry is a new sale.
+   */
+  readonly fromSaleId?: string | undefined;
+}
+
 /** The store of the sale being put together: the products on offer and the cart. */
-export function NewSaleProvider({ children }: { readonly children: ReactNode }) {
+export function NewSaleProvider({ children, fromSaleId }: NewSaleProviderProps) {
   const [products, setProducts] = useState<ProductsState>({ status: "loading" });
   const [draft, setDraft] = useState<SaleDraft>(() => SaleDraft.empty());
   const [failure, setFailure] = useState<SubmitFailure | null>(null);
+  const [prefill, setPrefill] = useState<PrefillState | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let isCurrent = true;
+    const { listSellableProducts, prefillSale } = salesContainer();
 
-    salesContainer()
-      .listSellableProducts.execute()
-      .then((list) => {
-        if (isCurrent) setProducts({ status: "ready", products: list });
-      })
-      .catch((error: unknown) => {
-        if (isCurrent) setProducts({ status: "error", message: errorMessage(error) });
-      });
+    function loadProducts() {
+      listSellableProducts
+        .execute()
+        .then((list) => {
+          if (isCurrent) setProducts({ status: "ready", products: list });
+        })
+        .catch((error: unknown) => {
+          if (isCurrent) setProducts({ status: "error", message: errorMessage(error) });
+        });
+    }
+
+    // Only the first load copies the earlier sale: reloading the products
+    // later must not overwrite a cart the user already changed.
+    if (attempt === 0 && fromSaleId !== undefined) {
+      prefillSale
+        .execute(fromSaleId)
+        .then((copied) => {
+          if (!isCurrent) return;
+          setProducts({ status: "ready", products: copied.products });
+          setDraft(copied.draft);
+          setPrefill({ status: "copied", adjustments: copied.adjustments });
+        })
+        .catch((error: unknown) => {
+          if (!isCurrent) return;
+          setPrefill({ status: "failed", message: errorMessage(error) });
+          loadProducts();
+        });
+    } else {
+      loadProducts();
+    }
 
     return () => {
       isCurrent = false;
     };
-  }, [attempt]);
+  }, [attempt, fromSaleId]);
 
   // A cart must never survive into the session of another user.
   useEffect(
@@ -72,6 +112,7 @@ export function NewSaleProvider({ children }: { readonly children: ReactNode }) 
         setDraft(SaleDraft.empty());
         setProducts({ status: "loading" });
         setFailure(null);
+        setPrefill(null);
       }),
     [],
   );
@@ -139,6 +180,7 @@ export function NewSaleProvider({ children }: { readonly children: ReactNode }) 
       products,
       draft,
       failure,
+      prefill,
       isSubmitting,
       reloadProducts,
       add,
@@ -147,7 +189,7 @@ export function NewSaleProvider({ children }: { readonly children: ReactNode }) 
       submit,
       dismissFailure,
     }),
-    [products, draft, failure, isSubmitting, reloadProducts, add, setQuantity, remove, submit, dismissFailure],
+    [products, draft, failure, prefill, isSubmitting, reloadProducts, add, setQuantity, remove, submit, dismissFailure],
   );
 
   return <NewSaleContext.Provider value={value}>{children}</NewSaleContext.Provider>;

@@ -7,6 +7,7 @@ import {
   SaleNotYoursError,
   type SaleDetail,
 } from "@/features/sales/di/server";
+import { PaymentStatusPanel } from "@/features/payments/presentation";
 import { SaleDetailView, SaleNotYours } from "@/features/sales/presentation";
 
 import { SaleActionsRoute } from "./sale-actions-route";
@@ -43,7 +44,19 @@ export default async function SalePage({ params }: SalePageProps) {
   return (
     <SaleDetailView
       detail={loaded.detail}
-      actions={<SaleActionsRoute saleId={sale.id} isAwaitingPayment={sale.isAwaitingPayment} />}
+      actions={
+        <div className="flex flex-col items-end gap-3">
+          <SaleActionsRoute saleId={sale.id} isAwaitingPayment={sale.isAwaitingPayment} />
+          {/*
+           * Once the sale has a payment: polls while it is pending, or shows how
+           * it ended. Refreshing keeps it on screen, since the sale still has
+           * its transaction, and updates the rest of the detail.
+           */}
+          {sale.paymentTransactionId !== null && (
+            <PaymentStatusPanel saleId={sale.id} initialStatus={sale.status} refreshOnSettle />
+          )}
+        </div>
+      }
     />
   );
 }

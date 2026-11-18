@@ -116,9 +116,9 @@ export function CardPaymentForm({ saleId, totalLabel }: CardPaymentFormProps) {
         title="Cobro con tarjeta enviado"
       >
         <p>
-          Se cobró <strong>{totalLabel}</strong> a la tarjeta {started.card.brand} terminada en{" "}
-          <span className="font-mono">{started.card.lastFour}</span>. Wompi está procesando el pago:
-          mientras tanto, la venta queda <strong>pendiente</strong>.
+          Se envió el cobro de <strong>{totalLabel}</strong> a la tarjeta {started.card.brand}{" "}
+          terminada en <span className="font-mono">{started.card.lastFour}</span>. Wompi está
+          procesando el pago: mientras tanto, la venta queda <strong>pendiente</strong>.
         </p>
       </ChargeStarted>
     );
