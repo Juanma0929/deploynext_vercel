@@ -8,6 +8,7 @@ import type { SupplierProductDto } from "./dto/supplier-product.dto";
 import type { SupplierDto } from "./dto/supplier.dto";
 import {
   toCreateSupplierDto,
+  toSupplierDeleteError,
   toSupplier,
   toSupplierLookupError,
   toSupplierProduct,
@@ -51,6 +52,15 @@ export class SupplierHttpRepository implements SupplierRepository {
       return toSupplier(await this.http.patch<SupplierDto>(path, toUpdateSupplierDto(changes)));
     } catch (error: unknown) {
       throw toSupplierWriteError(error);
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      // 204 No Content: the client returns undefined without reading a body.
+      await this.http.delete<void>(`/suppliers/${encodeURIComponent(id)}`);
+    } catch (error: unknown) {
+      throw toSupplierDeleteError(error);
     }
   }
 }

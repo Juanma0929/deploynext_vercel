@@ -8,7 +8,7 @@ import {
   SupplierNotFoundError,
   type SupplierDetail,
 } from "@/features/suppliers/di/server";
-import { SupplierDetailView } from "@/features/suppliers/presentation";
+import { DeleteSupplierButton, SupplierDetailView } from "@/features/suppliers/presentation";
 
 interface SupplierPageProps {
   readonly params: Promise<{ readonly id: string }>;
@@ -43,12 +43,18 @@ export default async function SupplierPage({ params }: SupplierPageProps) {
       detail={detail}
       actions={
         <Can permission="suppliers:write">
-          <Link
-            href={`/proveedores/${detail.supplier.id}/editar`}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
-          >
-            Editar
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/proveedores/${detail.supplier.id}/editar`}
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
+            >
+              Editar
+            </Link>
+            <DeleteSupplierButton
+              supplierId={detail.supplier.id}
+              supplierName={detail.supplier.name}
+            />
+          </div>
         </Can>
       }
     />

@@ -21,19 +21,24 @@ interface SuppliersScreenProps {
    * and sees the list read-only.
    */
   readonly canManage: boolean;
+  /** The name of a supplier just deleted, to confirm it above the list. */
+  readonly deletedName?: string | undefined;
 }
 
 /** The list of suppliers, for every role. */
-export function SuppliersScreen({ canManage }: SuppliersScreenProps) {
+export function SuppliersScreen({ canManage, deletedName }: SuppliersScreenProps) {
   return (
     <SuppliersProvider>
-      <SuppliersList canManage={canManage} />
+      <SuppliersList canManage={canManage} deletedName={deletedName} />
     </SuppliersProvider>
   );
 }
 
-function SuppliersList({ canManage }: SuppliersScreenProps) {
+function SuppliersList({ canManage, deletedName }: SuppliersScreenProps) {
   const { list, reload } = useSuppliers();
+  const [notice, setNotice] = useState(
+    deletedName !== undefined && deletedName !== "" ? `Se eliminó el proveedor ${deletedName}.` : null,
+  );
   const searchId = useId();
   const [term, setTerm] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
@@ -70,6 +75,18 @@ function SuppliersList({ canManage }: SuppliersScreenProps) {
           </span>
         )}
       </header>
+
+      {notice !== null && (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900"
+        >
+          <p className="flex-1">{notice}</p>
+          <button type="button" onClick={() => setNotice(null)} className="font-medium underline">
+            Cerrar
+          </button>
+        </div>
+      )}
 
       <search className="flex flex-col gap-1 sm:max-w-md">
         <label htmlFor={searchId} className="text-xs font-medium">

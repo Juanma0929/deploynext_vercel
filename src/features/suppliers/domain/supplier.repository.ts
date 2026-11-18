@@ -16,4 +16,10 @@ export interface SupplierRepository {
 
   /** Rejects with SupplierNotFoundError when the supplier no longer exists. */
   update(id: string, changes: SupplierChanges): Promise<Supplier>;
+
+  /**
+   * Rejects with SupplierHasProductsError when products still reference it,
+   * and with SupplierNotFoundError when it no longer exists.
+   */
+  delete(id: string): Promise<void>;
 }
