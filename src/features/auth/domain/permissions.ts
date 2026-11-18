@@ -16,6 +16,8 @@ export const PERMISSIONS = [
   "sales:read-all",
   "sales:history",
   "sales:cancel",
+  /** Charges a sale with Wompi (POST /sales/:id/payment). A seller only its own, checked by the API. */
+  "sales:charge",
   "reports:read",
   "users:manage",
 ] as const;
@@ -35,6 +37,7 @@ const MATRIX: Readonly<Record<Role, ReadonlySet<Permission>>> = {
     "suppliers:read",
     "sales:create",
     "sales:read-today",
+    "sales:charge",
   ]),
 };
 
@@ -58,6 +61,7 @@ const ROUTE_RULES: readonly RouteRule[] = [
   { pattern: /^\/reportes(\/|$)/, permission: "reports:read" },
   { pattern: /^\/ventas\/historial(\/|$)/, permission: "sales:history" },
   { pattern: /^\/ventas\/nueva\/?$/, permission: "sales:create" },
+  { pattern: /^\/ventas\/[^/]+\/cobrar\/?$/, permission: "sales:charge" },
   { pattern: /^\/ventas\/?$/, permission: "sales:read-today" },
   { pattern: /^\/productos\/nuevo\/?$/, permission: "products:write" },
   { pattern: /^\/productos\/[^/]+\/editar\/?$/, permission: "products:write" },
