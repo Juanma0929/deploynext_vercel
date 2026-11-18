@@ -107,5 +107,30 @@ export interface LowStockProduct {
   readonly name: string;
   readonly currentStock: number;
   readonly minimumStock: number;
+  readonly supplierId: string;
+  /** Sent by the API with each row: no need to look the supplier up. */
   readonly supplierName: string;
+}
+
+/** Nothing left to sell. */
+export function isOutOfStock(product: Pick<LowStockProduct, "currentStock">): boolean {
+  return product.currentStock <= 0;
+}
+
+/** How many units bring it back to its minimum; 0 when it sits exactly on it. */
+export function unitsToMinimum(product: Pick<LowStockProduct, "currentStock" | "minimumStock">): number {
+  return Math.max(0, product.minimumStock - product.currentStock);
+}
+
+/**
+ * Most urgent first: out of stock, then the lowest share of its minimum,
+ * then by name. A product with 2 of 20 is more urgent than one with 4 of 5.
+ */
+export function byUrgency(a: LowStockProduct, b: LowStockProduct): number {
+  const outOfStock = Number(isOutOfStock(b)) - Number(isOutOfStock(a));
+  if (outOfStock !== 0) return outOfStock;
+
+  const share = (product: LowStockProduct) =>
+    product.minimumStock > 0 ? product.currentStock / product.minimumStock : 1;
+  return share(a) - share(b) || a.name.localeCompare(b.name, "es");
 }
