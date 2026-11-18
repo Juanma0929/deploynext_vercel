@@ -7,3 +7,14 @@ export class SupplierNotFoundError extends AppError {
     this.name = "SupplierNotFoundError";
   }
 }
+
+/**
+ * DELETE /suppliers/:id answered 409: products still reference the supplier,
+ * inactive ones included, so it cannot be deleted.
+ */
+export class SupplierHasProductsError extends AppError {
+  constructor() {
+    super("Este proveedor tiene productos asociados.");
+    this.name = "SupplierHasProductsError";
+  }
+}

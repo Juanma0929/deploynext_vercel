@@ -1,6 +1,7 @@
 import { browserHttpClient } from "@/shared/di/http";
 
 import { CreateSupplierUseCase } from "../application/create-supplier.use-case";
+import { DeleteSupplierUseCase } from "../application/delete-supplier.use-case";
 import { ListSuppliersUseCase } from "../application/list-suppliers.use-case";
 import { UpdateSupplierUseCase } from "../application/update-supplier.use-case";
 import { SupplierHttpRepository } from "../infrastructure/supplier.http.repository";
@@ -9,6 +10,7 @@ export interface SuppliersContainer {
   readonly listSuppliers: ListSuppliersUseCase;
   readonly createSupplier: CreateSupplierUseCase;
   readonly updateSupplier: UpdateSupplierUseCase;
+  readonly deleteSupplier: DeleteSupplierUseCase;
 }
 
 let container: SuppliersContainer | null = null;
@@ -23,6 +25,7 @@ export function suppliersContainer(): SuppliersContainer {
     listSuppliers: new ListSuppliersUseCase(repository),
     createSupplier: new CreateSupplierUseCase(repository),
     updateSupplier: new UpdateSupplierUseCase(repository),
+    deleteSupplier: new DeleteSupplierUseCase(repository),
   };
   return container;
 }

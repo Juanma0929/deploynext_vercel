@@ -1,6 +1,6 @@
 import { ApiRequestError } from "@/shared/infrastructure/http";
 
-import { SupplierNotFoundError } from "../domain/errors";
+import { SupplierHasProductsError, SupplierNotFoundError } from "../domain/errors";
 import { Supplier } from "../domain/supplier";
 import type { NewSupplier, SupplierChanges } from "../domain/supplier-input";
 import { SupplierProduct } from "../domain/supplier-product";
@@ -69,4 +69,10 @@ export function toUpdateSupplierDto(changes: SupplierChanges): UpdateSupplierDto
     ...(changes.email !== undefined ? { email: changes.email } : {}),
     ...(changes.address !== undefined ? { address: changes.address } : {}),
   };
+}
+
+/** DELETE answers 409 ("referenced by other records") while the supplier has products. */
+export function toSupplierDeleteError(error: unknown): unknown {
+  if (error instanceof ApiRequestError && error.status === 409) return new SupplierHasProductsError();
+  return toSupplierWriteError(error);
 }

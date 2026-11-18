@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { SupplierDetail } from "../application/get-supplier-detail.use-case";
+import { SUPPLIER_PRODUCTS_ANCHOR } from "./supplier-anchors";
 
 interface SupplierDetailViewProps {
   readonly detail: SupplierDetail;
@@ -53,7 +54,11 @@ export function SupplierDetailView({ detail, actions }: SupplierDetailViewProps)
         </dl>
       </section>
 
-      <section aria-labelledby="supplier-products-title" className="flex flex-col gap-3">
+      <section
+        id={SUPPLIER_PRODUCTS_ANCHOR}
+        aria-labelledby="supplier-products-title"
+        className="flex scroll-mt-6 flex-col gap-3"
+      >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="supplier-products-title" className="text-lg font-semibold">
             Productos que suministra
