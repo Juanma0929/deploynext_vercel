@@ -1,4 +1,6 @@
 import type { Sale } from "./sale";
+import type { SaleItem } from "./sale-draft";
+import type { SaleProduct } from "./sale-product";
 
 export interface SaleRepository {
   /**
@@ -6,4 +8,15 @@ export interface SaleRepository {
    * own; an admin gets every one.
    */
   findToday(): Promise<Sale[]>;
+
+  /**
+   * Registers a pending sale and decreases the stock. Rejects with
+   * SaleRejectedError when a product is inactive, short of stock or gone.
+   */
+  create(items: readonly SaleItem[]): Promise<Sale>;
+}
+
+/** The products a sale can be made of (GET /products). */
+export interface SaleProductCatalog {
+  list(): Promise<SaleProduct[]>;
 }
