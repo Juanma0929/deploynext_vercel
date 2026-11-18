@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
 import { paginate } from "@/shared/domain/collections";
@@ -118,7 +119,11 @@ function SuppliersList({ canManage }: SuppliersScreenProps) {
                 <tbody className="divide-y divide-slate-100">
                   {page.items.map((supplier) => (
                     <tr key={supplier.id}>
-                      <td className="px-4 py-3 font-medium">{supplier.name}</td>
+                      <td className="px-4 py-3 font-medium">
+                        <Link href={`/proveedores/${supplier.id}`} className="text-primary hover:underline">
+                          {supplier.name}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3">{supplier.contactName ?? <Missing />}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {supplier.phone !== null ? (

@@ -1,4 +1,9 @@
+import { ApiRequestError } from "@/shared/infrastructure/http";
+
+import { SupplierNotFoundError } from "../domain/errors";
 import { Supplier } from "../domain/supplier";
+import { SupplierProduct } from "../domain/supplier-product";
+import type { SupplierProductDto } from "./dto/supplier-product.dto";
 import type { SupplierDto } from "./dto/supplier.dto";
 
 export function toSupplier(dto: SupplierDto): Supplier {
@@ -10,4 +15,29 @@ export function toSupplier(dto: SupplierDto): Supplier {
     email: dto.email ?? null,
     address: dto.address ?? null,
   });
+}
+
+/** The purchase price stays out: the detail only shows what every role may see. */
+export function toSupplierProduct(dto: SupplierProductDto): SupplierProduct {
+  return new SupplierProduct({
+    id: dto.id,
+    name: dto.name,
+    category: dto.category ?? null,
+    salePrice: dto.salePrice,
+    currentStock: dto.currentStock,
+    minimumStock: dto.minimumStock,
+    isActive: dto.isActive,
+  });
+}
+
+/**
+ * A 404 (no such supplier) and a 400 (ParseUUIDPipe refused the id) both mean
+ * "this supplier does not exist". Anything else, including the redirect the
+ * server client throws on a 401, goes through unchanged.
+ */
+export function toSupplierLookupError(error: unknown): unknown {
+  if (error instanceof ApiRequestError && (error.status === 404 || error.status === 400)) {
+    return new SupplierNotFoundError();
+  }
+  return error;
 }
