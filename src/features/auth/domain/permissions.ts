@@ -1,4 +1,4 @@
-import type { Role } from "./role";
+import type { Role } from "@/shared/domain/role";
 
 /**
  * Everything the interface can show or hide. Each one mirrors the @Roles() of

@@ -1,8 +1,8 @@
 import { DomainError } from "@/shared/domain/errors";
 
-import { isValidEmail } from "./email";
+import { isValidEmail } from "@/shared/domain/email";
 import { can, canAccessRoute, type Permission } from "./permissions";
-import { isRole, type Role } from "./role";
+import { isRole, type Role } from "@/shared/domain/role";
 
 export interface UserProps {
   readonly id: string;

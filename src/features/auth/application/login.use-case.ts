@@ -2,7 +2,7 @@ import { DomainError } from "@/shared/domain/errors";
 
 import type { AuthRepository } from "../domain/auth.repository";
 import { isValidTwoFactorCode, type LoginCredentials } from "../domain/credentials";
-import { isValidEmail } from "../domain/email";
+import { isValidEmail } from "@/shared/domain/email";
 import type { SessionTokenStore } from "../domain/session-token.store";
 
 /**

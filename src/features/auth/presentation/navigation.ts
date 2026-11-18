@@ -1,5 +1,6 @@
+import type { Role } from "@/shared/domain/role";
+
 import { can, type Permission } from "../domain/permissions";
-import type { Role } from "../domain/role";
 
 export interface NavigationItem {
   readonly href: string;
@@ -25,8 +26,3 @@ const ITEMS: readonly GuardedItem[] = [
 export function navigationFor(role: Role): readonly NavigationItem[] {
   return ITEMS.filter((item) => item.permission === null || can(role, item.permission));
 }
-
-export const ROLE_LABELS: Readonly<Record<Role, string>> = {
-  admin: "Administrador",
-  seller: "Vendedor",
-};
