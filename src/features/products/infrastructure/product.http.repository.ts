@@ -2,13 +2,19 @@ import { ApiRequestError, type HttpClient } from "@/shared/infrastructure/http";
 
 import { ProductNotFoundError } from "../domain/errors";
 import type { Product } from "../domain/product";
+import type { ProductDraft } from "../domain/product-input";
 import type {
   ProductRepository,
   SupplierName,
   SupplierNameRepository,
 } from "../domain/product.repository";
 import type { ProductDto, SupplierNameDto } from "./dto/product.dto";
-import { toProduct, toSupplierName } from "./product.mapper";
+import {
+  toCreateProductDto,
+  toProduct,
+  toProductWriteError,
+  toSupplierName,
+} from "./product.mapper";
 
 export class ProductHttpRepository implements ProductRepository {
   constructor(private readonly http: HttpClient) {}
@@ -16,6 +22,14 @@ export class ProductHttpRepository implements ProductRepository {
   async list(): Promise<Product[]> {
     const dtos = await this.http.get<ProductDto[]>("/products");
     return dtos.map(toProduct);
+  }
+
+  async create(draft: ProductDraft): Promise<Product> {
+    try {
+      return toProduct(await this.http.post<ProductDto>("/products", toCreateProductDto(draft)));
+    } catch (error: unknown) {
+      throw toProductWriteError(error);
+    }
   }
 
   async findById(id: string): Promise<Product> {
