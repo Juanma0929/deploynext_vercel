@@ -1,5 +1,6 @@
 import { browserHttpClient } from "@/shared/di/http";
 
+import { DownloadSalesReportPdfUseCase } from "../application/download-sales-report-pdf.use-case";
 import { GetAdminDashboardUseCase } from "../application/get-admin-dashboard.use-case";
 import { GetLowStockReportUseCase } from "../application/get-low-stock-report.use-case";
 import { GetSalesReportUseCase } from "../application/get-sales-report.use-case";
@@ -11,6 +12,7 @@ export interface ReportsContainer {
   readonly getTopProducts: GetTopProductsUseCase;
   readonly getSalesReport: GetSalesReportUseCase;
   readonly getLowStockReport: GetLowStockReportUseCase;
+  readonly downloadSalesReportPdf: DownloadSalesReportPdfUseCase;
 }
 
 let container: ReportsContainer | null = null;
@@ -26,6 +28,7 @@ export function reportsContainer(): ReportsContainer {
     getTopProducts: new GetTopProductsUseCase(repository),
     getSalesReport: new GetSalesReportUseCase(repository),
     getLowStockReport: new GetLowStockReportUseCase(repository),
+    downloadSalesReportPdf: new DownloadSalesReportPdfUseCase(repository),
   };
   return container;
 }

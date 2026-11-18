@@ -16,6 +16,14 @@ export class ReportHttpRepository implements ReportRepository {
     return toSalesReport(range, dto);
   }
 
+  /**
+   * Through the HTTP client and not a link: a plain <a href> to the API would
+   * not carry the Bearer token, and the API would answer 401.
+   */
+  salesReportPdf(range: DateRange): Promise<Blob> {
+    return this.http.getBlob("/reports/sales/pdf", { query: { from: range.from, to: range.to } });
+  }
+
   async topProducts(limit: number): Promise<TopProduct[]> {
     const dtos = await this.http.get<TopProductRowDto[]>("/reports/top-products", {
       query: { limit },

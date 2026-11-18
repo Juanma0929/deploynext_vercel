@@ -8,6 +8,7 @@ import { errorMessage } from "@/shared/domain/errors";
 
 import type { SalesReport } from "../domain/reports";
 import { longDay, shortDay } from "./day-format";
+import { DownloadSalesPdfButton } from "./download-sales-pdf-button";
 import { SalesPeriodChart } from "./sales-period-chart";
 import { useSalesReport } from "./use-sales-report";
 
@@ -60,19 +61,22 @@ export function SalesPeriodReport() {
       className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4"
     >
       <header className="flex flex-col gap-3">
-        <div>
-          <h2 id="sales-period-title" className="text-lg font-semibold">
-            Ventas por periodo
-          </h2>
-          <p className="text-muted text-sm">
-            Del <span className="font-medium">{longDay(range.from)}</span>
-            {range.from !== range.to && (
-              <>
-                {" "}al <span className="font-medium">{longDay(range.to)}</span>
-              </>
-            )}
-            , en hora de Colombia. Solo cuentan las ventas pagadas.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="sales-period-title" className="text-lg font-semibold">
+              Ventas por periodo
+            </h2>
+            <p className="text-muted text-sm">
+              Del <span className="font-medium">{longDay(range.from)}</span>
+              {range.from !== range.to && (
+                <>
+                  {" "}al <span className="font-medium">{longDay(range.to)}</span>
+                </>
+              )}
+              , en hora de Colombia. Solo cuentan las ventas pagadas.
+            </p>
+          </div>
+          <DownloadSalesPdfButton range={range} />
         </div>
 
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
