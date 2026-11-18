@@ -28,10 +28,15 @@ export class SaleNotYoursError extends AppError {
   }
 }
 
-/** The sale is no longer pending, or a payment started: it cannot be cancelled. */
+/**
+ * The sale is no longer pending, or a payment already started: the API
+ * answers 409 and it cannot be cancelled. The message says which.
+ */
 export class SaleNotCancellableError extends AppError {
-  constructor() {
-    super("Esta venta ya no se puede cancelar: solo se cancelan las ventas pendientes sin un pago en curso.");
+  constructor(
+    message = "Esta venta ya no se puede cancelar: solo se cancelan las ventas pendientes sin un pago en curso.",
+  ) {
+    super(message);
     this.name = "SaleNotCancellableError";
   }
 }
