@@ -1,4 +1,5 @@
 import { filter } from "@/shared/domain/collections";
+import { normalizeForSearch } from "@/shared/domain/text";
 
 import type { Supplier } from "./supplier";
 
@@ -7,18 +8,14 @@ import type { Supplier } from "./supplier";
  * ignoring case and accents. An empty term keeps them all.
  */
 export function searchSuppliers(suppliers: readonly Supplier[], term: string): Supplier[] {
-  const needle = normalize(term);
+  const needle = normalizeForSearch(term);
 
   return filter(suppliers, [
     needle === ""
       ? null
       : (supplier) =>
-          normalize(
+          normalizeForSearch(
             [supplier.name, supplier.contactName, supplier.email, supplier.phone].join(" "),
           ).includes(needle),
   ]);
-}
-
-function normalize(text: string): string {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
 }
