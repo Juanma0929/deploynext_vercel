@@ -1,5 +1,5 @@
 import type { Product } from "./product";
-import type { ProductDraft } from "./product-input";
+import type { ProductChanges, ProductDraft } from "./product-input";
 
 export interface ProductRepository {
   /** Every product, active and inactive, ordered by name. */
@@ -11,6 +11,12 @@ export interface ProductRepository {
    * ProductSupplierNotFoundError (404).
    */
   create(draft: ProductDraft): Promise<Product>;
+  /**
+   * Saves only the given fields. Rejects with ProductNotFoundError,
+   * ProductSupplierNotFoundError (404 for the new supplier) or
+   * DuplicateBarcodeError (409).
+   */
+  update(id: string, changes: ProductChanges): Promise<Product>;
 }
 
 /** The name of a supplier, to show next to its products. */

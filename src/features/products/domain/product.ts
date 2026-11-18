@@ -72,6 +72,27 @@ export class Product {
   get margin(): Money {
     return this.salePrice.subtract(this.purchasePrice);
   }
+
+  /**
+   * The product as plain data, to hand it to a Client Component (only plain
+   * objects can cross that boundary). `new Product(product.toProps())` gives
+   * the same product back.
+   */
+  toProps(): ProductProps {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      category: this.category,
+      barcode: this.barcode,
+      purchasePrice: this.purchasePrice.amount,
+      salePrice: this.salePrice.amount,
+      currentStock: this.currentStock,
+      minimumStock: this.minimumStock,
+      supplierId: this.supplierId,
+      isActive: this.isActive,
+    };
+  }
 }
 
 function isStock(value: number): boolean {

@@ -1,10 +1,19 @@
 import { ApiRequestError } from "@/shared/infrastructure/http";
 
-import { DuplicateBarcodeError, ProductSupplierNotFoundError } from "../domain/errors";
+import {
+  DuplicateBarcodeError,
+  ProductNotFoundError,
+  ProductSupplierNotFoundError,
+} from "../domain/errors";
 import { Product } from "../domain/product";
-import type { ProductDraft } from "../domain/product-input";
+import type { ProductChanges, ProductDraft } from "../domain/product-input";
 import type { SupplierName } from "../domain/product.repository";
-import type { CreateProductDto, ProductDto, SupplierNameDto } from "./dto/product.dto";
+import type {
+  CreateProductDto,
+  ProductDto,
+  SupplierNameDto,
+  UpdateProductDto,
+} from "./dto/product.dto";
 
 export function toProduct(dto: ProductDto): Product {
   return new Product({
@@ -45,10 +54,50 @@ export function toCreateProductDto(draft: ProductDraft): CreateProductDto {
   };
 }
 
-/** 409: the barcode is taken; 404: the supplier does not exist. Anything else as is. */
+/**
+ * The body of PATCH /products/:id. Like on create, the amounts become numbers
+ * here; every key is copied only if it changed, so the API leaves the rest
+ * alone.
+ */
+export function toUpdateProductDto(changes: ProductChanges): UpdateProductDto {
+  const amount = (value: string | undefined) => (value === undefined ? undefined : Number(value));
+  const dto = {
+    name: changes.name,
+    description: changes.description,
+    category: changes.category,
+    barcode: changes.barcode,
+    purchasePrice: amount(changes.purchasePrice),
+    salePrice: amount(changes.salePrice),
+    currentStock: amount(changes.currentStock),
+    minimumStock: amount(changes.minimumStock),
+    supplierId: changes.supplierId,
+    isActive: changes.isActive,
+  };
+  // An undefined key would be dropped by JSON anyway; leaving it out keeps the body honest.
+  return Object.fromEntries(
+    Object.entries(dto).filter(([, value]) => value !== undefined),
+  ) as UpdateProductDto;
+}
+
+/** On create: 409, the barcode is taken; 404, the supplier does not exist. Anything else as is. */
 export function toProductWriteError(error: unknown): unknown {
   if (!(error instanceof ApiRequestError)) return error;
   if (error.status === 409) return new DuplicateBarcodeError();
   if (error.status === 404) return new ProductSupplierNotFoundError();
+  return error;
+}
+
+/**
+ * On update a 404 is either the product or the new supplier. If the supplier
+ * was being changed, it is read as the supplier; otherwise, as the product.
+ */
+export function toProductUpdateError(error: unknown, changes: ProductChanges): unknown {
+  if (!(error instanceof ApiRequestError)) return error;
+  if (error.status === 409) return new DuplicateBarcodeError();
+  if (error.status === 404) {
+    return changes.supplierId !== undefined
+      ? new ProductSupplierNotFoundError()
+      : new ProductNotFoundError();
+  }
   return error;
 }
