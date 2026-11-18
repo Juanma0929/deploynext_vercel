@@ -39,6 +39,28 @@ desarrollo (y la API ocupa el 3000).
 | `npm run lint` | ESLint, incluidas las fronteras entre capas |
 | `npm run typecheck` | TypeScript en modo strict, sin emitir archivos |
 | `npm test` | Pruebas unitarias con Vitest (`npm run test:watch` para dejarlas corriendo) |
+| `npm run test:e2e` | Pruebas E2E con Playwright contra la API real (ver "Pruebas E2E") |
+
+## Pruebas E2E
+
+Corren en Chromium contra la API de `NEXT_PUBLIC_API_URL`, con los usuarios que crea su seed:
+
+1. La API tiene que estar corriendo, con el seed aplicado y las llaves del sandbox de Wompi.
+2. Copia `.env.e2e.example` a `.env.e2e.local` (no se sube) y escribe las contraseñas de
+   `SEED_ADMIN_PASSWORD` y `SEED_SELLER_PASSWORD` de esa API.
+3. La primera vez: `npx playwright install chromium`.
+4. `npm run test:e2e`. Playwright compila y levanta el frontend en el puerto 3001 (o usa el que
+   ya esté corriendo ahí); con `E2E_BASE_URL` prueba otro.
+
+| Archivo | Qué prueba |
+| --- | --- |
+| `e2e/auth.spec.ts` | Login correcto, login fallido, logout, y que una ruta protegida sin token redirige a `/login` |
+| `e2e/authorization.spec.ts` | El seller no ve Reportes ni Usuarios y por URL ve "Acceso denegado"; el admin sí los ve |
+| `e2e/business-flow.spec.ts` | En serie: el admin crea un producto, el seller lo vende y lo cobra con Nequi `3991111111` hasta `paid`, y el admin lo desactiva |
+
+Son **repetibles**: el flujo de negocio crea su propio producto con un código de barras único
+(`E2E<timestamp>`), así que no depende del stock del seed ni lo agota. Cada corrida deja un
+producto inactivo y una venta pagada.
 
 ## Arquitectura
 
