@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
+import { ROLE_LABELS } from "@/shared/domain/role";
+
 import { AccessDenied } from "./access-denied";
-import { navigationFor, ROLE_LABELS } from "./navigation";
+import { navigationFor } from "./navigation";
 import { useAuth } from "./use-auth";
 import { useForbiddenNotice } from "./use-forbidden-notice";
 
