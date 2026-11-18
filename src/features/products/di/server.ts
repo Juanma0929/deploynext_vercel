@@ -6,7 +6,12 @@ import {
   GetProductDetailUseCase,
   type ProductDetail,
 } from "../application/get-product-detail.use-case";
-import { ListInventoryUseCase, type Inventory } from "../application/list-inventory.use-case";
+import {
+  ListInventoryUseCase,
+  type Inventory,
+  type InventoryRow,
+} from "../application/list-inventory.use-case";
+import { ListLowStockUseCase } from "../application/list-low-stock.use-case";
 import { ListSupplierOptionsUseCase } from "../application/list-supplier-options.use-case";
 import type { SupplierName } from "../domain/product.repository";
 import type { ProductFilters } from "../domain/product-filters";
@@ -36,6 +41,15 @@ export function listInventory(
     new SupplierNameHttpRepository(http),
   );
   return useCase.execute(filters, page);
+}
+
+/** The products to restock, most urgent first, for the server. */
+export function listLowStock(returnTo: string): Promise<InventoryRow[]> {
+  const http = serverHttpClient(returnTo);
+  return new ListLowStockUseCase(
+    new ProductHttpRepository(http),
+    new SupplierNameHttpRepository(http),
+  ).execute();
 }
 
 /** The suppliers to choose from in the product form, for the server. */

@@ -2,6 +2,7 @@ import { ApiRequestError } from "@/shared/infrastructure/http";
 
 import {
   DuplicateBarcodeError,
+  ProductHasSalesError,
   ProductNotFoundError,
   ProductSupplierNotFoundError,
 } from "../domain/errors";
@@ -84,6 +85,14 @@ export function toProductWriteError(error: unknown): unknown {
   if (!(error instanceof ApiRequestError)) return error;
   if (error.status === 409) return new DuplicateBarcodeError();
   if (error.status === 404) return new ProductSupplierNotFoundError();
+  return error;
+}
+
+/** On delete: 409, sales reference the product; 404, it is already gone. */
+export function toProductDeleteError(error: unknown): unknown {
+  if (!(error instanceof ApiRequestError)) return error;
+  if (error.status === 409) return new ProductHasSalesError();
+  if (error.status === 404 || error.status === 400) return new ProductNotFoundError();
   return error;
 }
 

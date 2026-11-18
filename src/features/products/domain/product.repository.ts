@@ -17,6 +17,13 @@ export interface ProductRepository {
    * DuplicateBarcodeError (409).
    */
   update(id: string, changes: ProductChanges): Promise<Product>;
+  /**
+   * Deletes a product for good. Rejects with ProductHasSalesError (409) if it
+   * was sold, or with ProductNotFoundError (404).
+   */
+  delete(id: string): Promise<void>;
+  /** The active products with currentStock <= minimumStock, ordered by name. */
+  listLowStock(): Promise<Product[]>;
 }
 
 /** The name of a supplier, to show next to its products. */

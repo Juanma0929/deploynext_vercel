@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Can } from "@/features/auth/presentation";
 import { listInventory } from "@/features/products/di/server";
 import {
+  DELETED_PRODUCT_PARAM,
   InventoryScreen,
   inventoryHref,
   parseInventoryQuery,
@@ -24,13 +25,16 @@ interface ProductsPageProps {
  * error.tsx if it fails. Only an admin (products:write) sees "Nuevo producto".
  */
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const query = parseInventoryQuery(await searchParams);
+  const params = await searchParams;
+  const query = parseInventoryQuery(params);
   const inventory = await listInventory(query.filters, query.page, inventoryHref(query));
+  const deleted = params[DELETED_PRODUCT_PARAM];
 
   return (
     <InventoryScreen
       inventory={inventory}
       query={query}
+      deletedName={typeof deleted === "string" ? deleted : undefined}
       actions={
         <Can permission="products:write">
           <Link

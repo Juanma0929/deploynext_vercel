@@ -12,6 +12,7 @@ import type { ProductDto, SupplierNameDto } from "./dto/product.dto";
 import {
   toCreateProductDto,
   toProduct,
+  toProductDeleteError,
   toProductUpdateError,
   toProductWriteError,
   toSupplierName,
@@ -41,6 +42,20 @@ export class ProductHttpRepository implements ProductRepository {
     } catch (error: unknown) {
       throw toProductUpdateError(error, changes);
     }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      // 204 No Content: the client returns undefined without reading a body.
+      await this.http.delete<void>(`/products/${encodeURIComponent(id)}`);
+    } catch (error: unknown) {
+      throw toProductDeleteError(error);
+    }
+  }
+
+  async listLowStock(): Promise<Product[]> {
+    const dtos = await this.http.get<ProductDto[]>("/products/low-stock");
+    return dtos.map(toProduct);
   }
 
   async findById(id: string): Promise<Product> {
