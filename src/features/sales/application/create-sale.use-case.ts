@@ -9,8 +9,9 @@ import type { SaleRepository } from "../domain/sale.repository";
 export class CreateSaleUseCase {
   constructor(private readonly repository: SaleRepository) {}
 
-  execute(draft: SaleDraft): Promise<Sale> {
-    // toItems() refuses an empty cart before any request.
+  async execute(draft: SaleDraft): Promise<Sale> {
+    // toItems() refuses an empty cart before any request. Being async, that
+    // refusal is a rejected promise like every other error, not a throw.
     return this.repository.create(draft.toItems());
   }
 }

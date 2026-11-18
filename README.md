@@ -38,6 +38,7 @@ desarrollo (y la API ocupa el 3000).
 | `npm run build` | Build de producción |
 | `npm run lint` | ESLint, incluidas las fronteras entre capas |
 | `npm run typecheck` | TypeScript en modo strict, sin emitir archivos |
+| `npm test` | Pruebas unitarias con Vitest (`npm run test:watch` para dejarlas corriendo) |
 
 ## Arquitectura
 

@@ -138,6 +138,23 @@ avisa por `src/shared/presentation/data-changes.ts`: una venta llama a
 `notifyDataChanged("sales", "products")`, y el catálogo de productos se marca desactualizado (se
 recarga ya si está en pantalla, o la próxima vez que se abra).
 
+## Pruebas unitarias
+
+`npm test` corre Vitest en Node, sin navegador: el dominio y la aplicación no dependen de React.
+Cada prueba vive junto a lo que prueba (`product.ts` → `product.test.ts`).
+
+| Qué | Prueba |
+| --- | --- |
+| `Product`, `SaleDraft` (carrito), `DateRange`, `PaymentRequest`, `Money` | Sus reglas: qué aceptan, qué rechazan y con qué mensaje |
+| Matriz de permisos | Cada permiso por rol y la regla de cada ruta |
+| `CreateSaleUseCase` | Con un `SaleRepository` falso: solo envía ids y cantidades, y un carrito vacío no llega a la API |
+| `PollPaymentStatusUseCase` | Con un `PaymentRepository` falso que responde `pending` y luego `paid`, y un reloj falso: no espera segundos reales |
+| `GetSalesReportUseCase` | Con un `ReportRepository` falso que manda días sueltos: `byDay` sale completo, con 0 en los días sin ventas |
+
+Los repositorios falsos son clases que implementan el puerto del dominio (`implements
+SaleRepository`), así que TypeScript avisa si el puerto cambia. El reloj del polling es un puerto
+(`PollingClock`) por la misma razón: el navegador recibe el real desde `di/`.
+
 ## Excepción justificada: el cliente de Wompi
 
 `src/features/payments/infrastructure/wompi-card-tokenizer.ts` (`WompiCardTokenizer`) es el **único**
