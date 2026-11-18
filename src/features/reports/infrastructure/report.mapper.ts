@@ -9,6 +9,13 @@ export function toSalesReport(range: DateRange, dto: SalesReportDto): SalesRepor
     salesCount: dto.salesCount,
     revenue: dto.revenue,
     profit: dto.profit,
+    // Only the days with sales come; the domain fills the others with 0.
+    byDay: dto.byDay.map((day) => ({
+      date: day.date,
+      salesCount: day.salesCount,
+      revenue: day.revenue,
+      profit: day.profit,
+    })),
   });
 }
 

@@ -1,16 +1,39 @@
+import { daysOf } from "@/shared/domain/calendar";
 import type { DateRange } from "@/shared/domain/date-range";
 import { DomainError } from "@/shared/domain/errors";
 import { Money } from "@/shared/domain/money";
 
-/** The totals of the paid sales of a period. */
+/** The paid sales of one day (YYYY-MM-DD, Colombian time). */
+export interface DailySales {
+  readonly date: string;
+  readonly salesCount: number;
+  readonly revenue: Money;
+  readonly profit: Money;
+}
+
+export interface DailySalesProps {
+  readonly date: string;
+  readonly salesCount: number;
+  readonly revenue: number;
+  readonly profit: number;
+}
+
+/** The totals of the paid sales of a period, and the same day by day. */
 export class SalesReport {
   readonly salesCount: number;
   readonly revenue: Money;
   readonly profit: Money;
+  /** Every day of the range, in order; the days without sales count 0. */
+  readonly byDay: readonly DailySales[];
 
   constructor(
     readonly range: DateRange,
-    props: { readonly salesCount: number; readonly revenue: number; readonly profit: number },
+    props: {
+      readonly salesCount: number;
+      readonly revenue: number;
+      readonly profit: number;
+      readonly byDay?: readonly DailySalesProps[];
+    },
   ) {
     if (!Number.isSafeInteger(props.salesCount) || props.salesCount < 0) {
       throw new DomainError("La cantidad de ventas del reporte no es válida.");
@@ -18,7 +41,33 @@ export class SalesReport {
     this.salesCount = props.salesCount;
     this.revenue = Money.cop(props.revenue);
     this.profit = Money.cop(props.profit);
+    this.byDay = fillMissingDays(range, props.byDay ?? []);
   }
+
+  /** The share of the revenue that is profit, in %, or null without revenue. */
+  get margin(): number | null {
+    return profitMargin(this);
+  }
+}
+
+/**
+ * The API sends only the days that had sales. A chart over that would join
+ * Monday to Thursday as if Tuesday and Wednesday did not exist, so every day
+ * of the range is listed, with 0 for the ones that are missing. Days outside
+ * the range are dropped.
+ */
+export function fillMissingDays(range: DateRange, days: readonly DailySalesProps[]): DailySales[] {
+  const byDate = new Map(days.map((day) => [day.date, day]));
+
+  return daysOf(range).map((date) => {
+    const day = byDate.get(date);
+    return {
+      date,
+      salesCount: day?.salesCount ?? 0,
+      revenue: Money.cop(day?.revenue ?? 0),
+      profit: Money.cop(day?.profit ?? 0),
+    };
+  });
 }
 
 /** A product among the best sellers, counting only paid sales. */
