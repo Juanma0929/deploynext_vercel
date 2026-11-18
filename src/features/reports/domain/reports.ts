@@ -3,6 +3,11 @@ import type { DateRange } from "@/shared/domain/date-range";
 import { DomainError } from "@/shared/domain/errors";
 import { Money } from "@/shared/domain/money";
 
+/** The name the PDF of a period is saved with: sales-report-<from>_<to>.pdf. */
+export function salesReportFileName(range: DateRange): string {
+  return `sales-report-${range.from}_${range.to}.pdf`;
+}
+
 /** The paid sales of one day (YYYY-MM-DD, Colombian time). */
 export interface DailySales {
   readonly date: string;
