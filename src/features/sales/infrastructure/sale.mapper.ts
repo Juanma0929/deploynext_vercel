@@ -1,3 +1,4 @@
+import { parseUtcTimestamp } from "@/shared/domain/calendar";
 import { ApiRequestError } from "@/shared/infrastructure/http";
 
 import { SaleRejectedError } from "../domain/errors";
@@ -10,7 +11,7 @@ import type { CreateSaleDto, SaleProductDto } from "./dto/sale-product.dto";
 export function toSale(dto: SaleDto): Sale {
   return new Sale({
     id: dto.id,
-    createdAt: new Date(dto.createdAt),
+    createdAt: parseUtcTimestamp(dto.createdAt),
     sellerId: dto.sellerId,
     total: dto.total,
     status: dto.status,
