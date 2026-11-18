@@ -4,7 +4,13 @@ import type { Sale } from "../domain/sale";
 import type { SaleItem } from "../domain/sale-draft";
 import type { SaleRepository } from "../domain/sale.repository";
 import type { SaleDto } from "./dto/sale.dto";
-import { toCreateSaleDto, toCreateSaleError, toSale } from "./sale.mapper";
+import {
+  toCancelSaleError,
+  toCreateSaleDto,
+  toCreateSaleError,
+  toSale,
+  toSaleLookupError,
+} from "./sale.mapper";
 
 export class SaleHttpRepository implements SaleRepository {
   constructor(private readonly http: HttpClient) {}
@@ -24,6 +30,22 @@ export class SaleHttpRepository implements SaleRepository {
       return toSale(await this.http.post<SaleDto>("/sales", toCreateSaleDto(items)));
     } catch (error: unknown) {
       throw toCreateSaleError(error);
+    }
+  }
+
+  async findById(id: string): Promise<Sale> {
+    try {
+      return toSale(await this.http.get<SaleDto>(`/sales/${encodeURIComponent(id)}`));
+    } catch (error: unknown) {
+      throw toSaleLookupError(error);
+    }
+  }
+
+  async cancel(id: string): Promise<Sale> {
+    try {
+      return toSale(await this.http.post<SaleDto>(`/sales/${encodeURIComponent(id)}/cancel`));
+    } catch (error: unknown) {
+      throw toCancelSaleError(error);
     }
   }
 }
