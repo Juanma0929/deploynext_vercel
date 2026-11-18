@@ -33,6 +33,30 @@ Además:
   `src/shared/infrastructure/http`, que se crea en `src/shared/di/http.ts`.
 - Un feature no importa otro feature. Si dos necesitan lo mismo, va en `src/shared`.
 
+## Permisos por rol
+
+La matriz vive en el dominio de auth (`src/features/auth/domain/permissions.ts`) y refleja los
+`@Roles()` de la API. El admin puede todo; el seller solo `products:read`, `suppliers:read`,
+`sales:create` y `sales:read-today`.
+
+- **Esconder una acción:** `<Can permission="sales:cancel">…</Can>` o `usePermissions().can(...)`,
+  exportados por `@/features/auth/presentation`. La regla nunca se escribe en el JSX
+  (`role === "admin"`), siempre se pregunta a la matriz.
+- **Bloquear una ruta:** se agrega a `ROUTE_RULES` en la misma matriz. El `AppShell` compara la ruta
+  con el rol del perfil y, si no puede, muestra "Acceso denegado" en vez de la página, aunque se
+  escriba la URL a mano. El rol no viaja en el JWT (la API lo lee de la base de datos), por eso esto no
+  lo hace `proxy.ts`.
+- **Si aun así llega un 403**, el cliente HTTP avisa y el `AppShell` muestra un aviso.
+
+| Ruta | Permiso |
+| --- | --- |
+| `/usuarios` | `users:manage` |
+| `/reportes` | `reports:read` |
+| `/ventas/historial` | `sales:history` |
+| `/ventas/nueva` | `sales:create` |
+| `/productos/nuevo`, `/productos/[id]/editar` | `products:write` |
+| `/proveedores/nuevo`, `/proveedores/[id]/editar` | `suppliers:write` |
+
 ## Al cerrar sesión
 
 `POST /auth/logout` invalida los tokens del usuario en todos sus dispositivos. El front borra el

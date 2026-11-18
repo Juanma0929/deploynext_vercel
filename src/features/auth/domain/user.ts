@@ -1,6 +1,7 @@
 import { DomainError } from "@/shared/domain/errors";
 
 import { isValidEmail } from "./email";
+import { can, canAccessRoute, type Permission } from "./permissions";
 import { isRole, type Role } from "./role";
 
 export interface UserProps {
@@ -42,5 +43,13 @@ export class User {
 
   get isAdmin(): boolean {
     return this.role === "admin";
+  }
+
+  can(permission: Permission): boolean {
+    return can(this.role, permission);
+  }
+
+  canAccessRoute(pathname: string): boolean {
+    return canAccessRoute(this.role, pathname);
   }
 }

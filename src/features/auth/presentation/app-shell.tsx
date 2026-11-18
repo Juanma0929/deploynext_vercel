@@ -4,14 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
+import { AccessDenied } from "./access-denied";
 import { navigationFor, ROLE_LABELS } from "./navigation";
 import { useAuth } from "./use-auth";
+import { useForbiddenNotice } from "./use-forbidden-notice";
 
-/** The frame of every protected page: the navigation of the role, then the page. */
+/**
+ * The frame of every protected page: the navigation of the role, then the page.
+ *
+ * It is also the guard by role. The role is not in the token (the API reads it
+ * from the database on every request), so the proxy cannot check it: it is
+ * checked here, with the profile, against the routes of the permission matrix.
+ * A route the role cannot open renders the access denied page instead of the
+ * page, so it is blocked even when typed in the address bar.
+ */
 export function AppShell({ children }: { readonly children: ReactNode }) {
   const { state, logout } = useAuth();
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const forbidden = useForbiddenNotice();
 
   function handleLogout() {
     setIsLoggingOut(true);
@@ -71,7 +82,27 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
           </button>
         </div>
       </header>
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</div>
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+        {forbidden.isVisible && (
+          <div
+            role="alert"
+            className="mb-4 flex items-start gap-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900"
+          >
+            <p className="flex-1">
+              No tienes permiso para hacer esa acción. Si tu rol cambió hace poco, cierra sesión y
+              vuelve a entrar.
+            </p>
+            <button
+              type="button"
+              onClick={forbidden.dismiss}
+              className="font-medium underline underline-offset-2"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
+        {user.canAccessRoute(pathname) ? children : <AccessDenied />}
+      </div>
     </div>
   );
 }
