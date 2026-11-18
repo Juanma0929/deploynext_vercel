@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import { suppliersContainer } from "../di/container";
@@ -34,6 +35,8 @@ export function useSaveSupplier(current: SupplierProps | undefined) {
           current === undefined
             ? await createSupplier.execute(values)
             : await updateSupplier.execute(new Supplier(current), values);
+        // The cached catalog of suppliers is stale now.
+        notifyDataChanged("suppliers");
         return { ok: true, supplier };
       } catch (error: unknown) {
         const { fields, message } = formErrorsFrom(error, SUPPLIER_FIELDS);

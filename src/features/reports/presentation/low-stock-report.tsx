@@ -19,7 +19,7 @@ import {
 
 import { isOutOfStock, unitsToMinimum } from "../domain/reports";
 import { ReportSection } from "./report-section";
-import { useLowStockReport } from "./use-low-stock-report";
+import { useReports } from "./use-reports";
 
 /**
  * The active products at or below their minimum, most urgent first, with the
@@ -27,7 +27,7 @@ import { useLowStockReport } from "./use-low-stock-report";
  * well as in color.
  */
 export function LowStockReport() {
-  const lowStock = useLowStockReport();
+  const { lowStock } = useReports({ lowStock: true });
 
   return (
     <ReportSection
@@ -45,19 +45,19 @@ export function LowStockReport() {
       {lowStock.status === "error" && <RetryAlert message={lowStock.message} onRetry={lowStock.reload} />}
 
       {lowStock.status === "ready" &&
-        (lowStock.report.products.length === 0 ? (
+        (lowStock.data.products.length === 0 ? (
           <Alert tone="success" className="justify-center text-center">
             <p>✓ Ningún producto está en su stock mínimo. No hay nada por reponer.</p>
           </Alert>
         ) : (
           <>
             <p className="text-sm">
-              <strong className="tabular-nums">{lowStock.report.products.length}</strong>{" "}
-              {lowStock.report.products.length === 1 ? "producto por reponer" : "productos por reponer"}
-              {lowStock.report.outOfStockCount > 0 && (
+              <strong className="tabular-nums">{lowStock.data.products.length}</strong>{" "}
+              {lowStock.data.products.length === 1 ? "producto por reponer" : "productos por reponer"}
+              {lowStock.data.outOfStockCount > 0 && (
                 <>
-                  , <strong className="text-red-700 tabular-nums">{lowStock.report.outOfStockCount}</strong>{" "}
-                  {lowStock.report.outOfStockCount === 1 ? "agotado" : "agotados"}
+                  , <strong className="text-red-700 tabular-nums">{lowStock.data.outOfStockCount}</strong>{" "}
+                  {lowStock.data.outOfStockCount === 1 ? "agotado" : "agotados"}
                 </>
               )}
               .
@@ -72,7 +72,7 @@ export function LowStockReport() {
                 <TableHeaderCell>Estado</TableHeaderCell>
               </TableHead>
               <TableBody>
-                {lowStock.report.products.map((product) => {
+                {lowStock.data.products.map((product) => {
                   const outOfStock = isOutOfStock(product);
                   return (
                     <TableRow key={product.productId}>

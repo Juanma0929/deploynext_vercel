@@ -77,17 +77,6 @@ export class SupplierNameHttpRepository implements SupplierNameRepository {
     const dtos = await this.http.get<SupplierNameDto[]>("/suppliers");
     return dtos.map(toSupplierName);
   }
-
-  async findById(id: string): Promise<SupplierName | null> {
-    try {
-      return toSupplierName(
-        await this.http.get<SupplierNameDto>(`/suppliers/${encodeURIComponent(id)}`),
-      );
-    } catch (error: unknown) {
-      if (isMissing(error)) return null;
-      throw error;
-    }
-  }
 }
 
 function isMissing(error: unknown): boolean {

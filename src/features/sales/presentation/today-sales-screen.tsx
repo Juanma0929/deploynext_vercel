@@ -28,7 +28,7 @@ import { SALE_STATUSES, type SaleStatus } from "../domain/sale-status";
 import type { Sale } from "../domain/sale";
 import { SaleStatusBadge } from "./sale-status-badge";
 import { SALE_STATUS_PLURALS } from "./sale-status-labels";
-import { useTodaySales } from "./use-today-sales";
+import { useSales } from "./use-sales";
 
 const PAGE_SIZE = 10;
 const NO_SALES: readonly Sale[] = [];
@@ -50,7 +50,7 @@ interface TodaySalesScreenProps {
 
 /** The sales of today in Colombian time, newest first, filtered by status in the front. */
 export function TodaySalesScreen({ seesEverySeller }: TodaySalesScreenProps) {
-  const today = useTodaySales();
+  const { today } = useSales({ today: true });
   const [status, setStatus] = useState<SaleStatus | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
 

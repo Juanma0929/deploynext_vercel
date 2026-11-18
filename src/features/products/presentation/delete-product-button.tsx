@@ -6,10 +6,10 @@ import { useState } from "react";
 import { errorMessage } from "@/shared/domain/errors";
 import { Alert, Button, Modal, ModalActions } from "@/shared/presentation/ui";
 
-import { productsContainer } from "../di/container";
 import { ProductHasSalesError, ProductNotFoundError } from "../domain/errors";
-import { Product, type ProductProps } from "../domain/product";
+import type { ProductProps } from "../domain/product";
 import { DELETED_PRODUCT_PARAM, INVENTORY_PATH } from "./inventory-search-params";
+import { useProducts } from "./use-products";
 
 type Step =
   | { readonly kind: "confirm" }
@@ -30,6 +30,7 @@ interface DeleteProductButtonProps {
  */
 export function DeleteProductButton({ product }: DeleteProductButtonProps) {
   const router = useRouter();
+  const { deleteProduct, deactivateProduct } = useProducts();
   const [isOpen, setIsOpen] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [step, setStep] = useState<Step>({ kind: "confirm" });
@@ -48,7 +49,7 @@ export function DeleteProductButton({ product }: DeleteProductButtonProps) {
   async function remove() {
     setIsWorking(true);
     try {
-      await productsContainer().deleteProduct.execute(product.id);
+      await deleteProduct(product.id);
       goToInventory();
       return;
     } catch (error: unknown) {
@@ -69,7 +70,7 @@ export function DeleteProductButton({ product }: DeleteProductButtonProps) {
   async function deactivateInstead() {
     setIsWorking(true);
     try {
-      await productsContainer().setProductActive.execute(new Product(product), false);
+      await deactivateProduct(product);
       setIsOpen(false);
       // The detail, rendered on the server, now shows the product as inactive.
       router.refresh();

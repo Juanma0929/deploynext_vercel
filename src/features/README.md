@@ -88,15 +88,55 @@ La matriz vive en el dominio de auth (`src/features/auth/domain/permissions.ts`)
 token (memoria y cookie) aunque la llamada falle, limpia los stores y redirige a `/login` con una
 recarga completa.
 
-Cada store de un feature debe registrar su reset en `src/shared/presentation/session-reset.ts`, para
-que no quede nada del usuario anterior aunque el store sobreviva a la recarga (por ejemplo, uno que
-persiste en `localStorage`):
+Todo store creado con `createStore` o `createResource` se registra solo en
+`src/shared/presentation/session-reset.ts`, y `logout` llama a `resetSessionState()`: todos los
+stores vuelven a su estado inicial, estén o no en pantalla. Una petición que estaba en curso al
+cerrar sesión se descarta, para que su respuesta no llene el store del siguiente usuario.
+
+## Estado centralizado
+
+Cada feature tiene **un store** en `presentation/<feature>-store.ts`, construido con
+`src/shared/presentation/store.ts`:
+
+| Feature | Store | Cómo se carga |
+| --- | --- | --- |
+| products | `productsCatalog` | **Catálogo cacheado**: se carga una vez y lo comparten las pantallas (alerta de stock bajo, `nameOf(id)`) |
+| suppliers | `suppliersCatalog` | **Catálogo cacheado** (lista, `nameOf(id)`) |
+| sales | `todaySalesResource`, `salesHistoryResource` | Se vuelven a pedir al abrir cada pantalla; mientras tanto se ve la copia anterior |
+| reports | dashboard, stock bajo y una familia por rango / límite | Igual que ventas, y cada rango queda guardado |
+| payments | `paymentStatuses` | El último estado conocido de cada venta cobrada en la sesión |
+| users | `usersResource` | Cacheado, y cada cambio del admin actualiza la lista sin pedirla otra vez |
+| auth | `AuthProvider` | La sesión; su `logout` resetea todos los demás |
+
+Los componentes **solo** usan los hooks fachada: `useProducts`, `useSuppliers`, `useSales`,
+`usePayment`, `useReports`, `useUsers` y `useAuth` (y `usePaymentStatus`, que exporta
+`use-payment.ts`). Nunca llaman a un container ni a un store directamente. Las fachadas reciben qué
+datos necesita la pantalla y no cargan lo demás:
 
 ```ts
-import { onSessionReset } from "@/shared/presentation/session-reset";
-
-onSessionReset(() => useProductsStore.getState().reset());
+const { today } = useSales({ today: true });
+const { sales } = useReports({ salesRange: range });
+const { cart } = useSales(); // dentro de <NewSaleProvider>
 ```
+
+### Nombres por id desde otros features
+
+Los catálogos de productos y proveedores se publican en `src/shared/presentation/name-catalogs.ts`
+(los registra `src/app/(protected)/name-catalogs.tsx`, el único lugar que conoce ambos features).
+Cualquier feature muestra un nombre por id sin importarlos:
+
+```tsx
+<CatalogName catalog="products" id={line.productId} fallback="Producto no disponible" />
+```
+
+Así lo hacen el detalle de una venta (nombres de sus productos) y el detalle de un producto (su
+proveedor); por eso ya no piden en el servidor `GET /products` ni `GET /suppliers/:id` cada vez
+que se abren: el catálogo se pide una vez por sesión.
+
+Los features no se importan entre sí, así que cuando uno cambia datos que otro tiene en caché lo
+avisa por `src/shared/presentation/data-changes.ts`: una venta llama a
+`notifyDataChanged("sales", "products")`, y el catálogo de productos se marca desactualizado (se
+recarga ya si está en pantalla, o la próxima vez que se abra).
 
 ## Excepción justificada: el cliente de Wompi
 

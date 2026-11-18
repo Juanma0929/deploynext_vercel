@@ -15,12 +15,12 @@ import {
 } from "@/shared/presentation/ui";
 
 import type { DraftLine } from "../domain/sale-draft";
-import { useNewSale } from "./use-new-sale";
+import { useSales } from "./use-sales";
 
 /** The cart: quantities, the estimated total and the button that registers the sale. */
 export function SaleCart() {
   const router = useRouter();
-  const { draft, failure, isSubmitting, submit, dismissFailure } = useNewSale();
+  const { draft, failure, isSubmitting, submit, dismissFailure } = useSales().cart;
   const { toast } = useToast();
   const [invalidLines, setInvalidLines] = useState<ReadonlySet<string>>(new Set());
 
@@ -123,7 +123,7 @@ interface CartLineProps {
  * cart when the domain accepts it, and otherwise the line shows why.
  */
 function CartLine({ line, onValidityChange }: CartLineProps) {
-  const { setQuantity, remove } = useNewSale();
+  const { setQuantity, remove } = useSales().cart;
   const quantityId = useId();
   const { product } = line;
   const [text, setText] = useState(String(line.quantity));

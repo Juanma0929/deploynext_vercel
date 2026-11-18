@@ -19,7 +19,7 @@ import {
 } from "@/shared/presentation/ui";
 
 import { SaleStatusBadge } from "./sale-status-badge";
-import { useTodaySales } from "./use-today-sales";
+import { useSales } from "./use-sales";
 
 const TIME_FORMAT = new Intl.DateTimeFormat("es-CO", {
   timeZone: BUSINESS_TIME_ZONE,
@@ -29,7 +29,7 @@ const TIME_FORMAT = new Intl.DateTimeFormat("es-CO", {
 
 /** The home page of a seller: its sales of today and the way to start a new one. */
 export function SellerHome() {
-  const today = useTodaySales();
+  const { today } = useSales({ today: true });
 
   return (
     <section aria-labelledby="seller-home-title" className="flex flex-col gap-6">

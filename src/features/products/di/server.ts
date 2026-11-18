@@ -61,12 +61,9 @@ export function listSupplierOptions(returnTo: string): Promise<SupplierName[]> {
 
 /**
  * The detail of a product, for the server. cache() makes generateMetadata and
- * the page of the same request share one pair of API calls.
+ * the page of the same request share one API call.
  */
 export const getProductDetail = cache((id: string): Promise<ProductDetail> => {
   const http = serverHttpClient(`/productos/${encodeURIComponent(id)}`);
-  return new GetProductDetailUseCase(
-    new ProductHttpRepository(http),
-    new SupplierNameHttpRepository(http),
-  ).execute(id);
+  return new GetProductDetailUseCase(new ProductHttpRepository(http)).execute(id);
 });

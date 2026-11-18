@@ -2,11 +2,11 @@
 
 import { Alert } from "@/shared/presentation/ui";
 
-import { useNewSale } from "./use-new-sale";
+import { useSales } from "./use-sales";
 
 /** What happened when the cart was filled from an earlier sale. Nothing for an empty start. */
 export function PrefillNotice() {
-  const { prefill } = useNewSale();
+  const { prefill } = useSales().cart;
   if (prefill === null) return null;
 
   if (prefill.status === "failed") {

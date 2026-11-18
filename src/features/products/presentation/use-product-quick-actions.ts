@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 
 import { productsContainer } from "../di/container";
 import { Product, type ProductProps } from "../domain/product";
@@ -38,6 +39,7 @@ export function useProductQuickActions(current: ProductProps): ProductQuickActio
       setIsWorking(true);
       try {
         await productsContainer().adjustStock.execute(new Product(current), newStock);
+        notifyDataChanged("products");
         router.refresh();
         return true;
       } catch (cause: unknown) {
@@ -59,7 +61,8 @@ export function useProductQuickActions(current: ProductProps): ProductQuickActio
     setIsWorking(true);
     try {
       await productsContainer().setProductActive.execute(new Product(current), !current.isActive);
-      router.refresh();
+      notifyDataChanged("products");
+        router.refresh();
       return true;
     } catch (cause: unknown) {
       setError(errorMessage(cause));

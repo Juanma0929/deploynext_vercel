@@ -29,7 +29,7 @@ import {
 } from "../domain/reports";
 import { ReportSection } from "./report-section";
 import { TopProductsChart } from "./top-products-chart";
-import { useTopProducts } from "./use-top-products";
+import { useReports } from "./use-reports";
 
 /**
  * The best sellers: a bar chart of units sold and a table with what each
@@ -40,7 +40,7 @@ export function TopProductsReport() {
   const [limit, setLimit] = useState<number>(TOP_PRODUCTS_LIMIT.default);
   const [draft, setDraft] = useState(String(TOP_PRODUCTS_LIMIT.default));
   const [limitError, setLimitError] = useState<string | null>(null);
-  const report = useTopProducts(limit);
+  const { topProducts: report } = useReports({ topProductsLimit: limit });
 
   function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,12 +95,12 @@ export function TopProductsReport() {
       {report.status === "error" && <RetryAlert message={report.message} onRetry={report.reload} />}
 
       {report.status === "ready" &&
-        (report.products.length === 0 ? (
+        (report.data.length === 0 ? (
           <EmptyState>Todavía no hay ventas pagadas para armar el reporte.</EmptyState>
         ) : (
           <>
-            <TopProductsChart products={report.products} />
-            <TopProductsTable products={report.products} />
+            <TopProductsChart products={report.data} />
+            <TopProductsTable products={report.data} />
           </>
         ))}
     </ReportSection>

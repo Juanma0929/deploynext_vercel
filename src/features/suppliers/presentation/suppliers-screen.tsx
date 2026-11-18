@@ -26,7 +26,6 @@ import {
 
 import type { Supplier } from "../domain/supplier";
 import { searchSuppliers } from "../domain/supplier-filters";
-import { SuppliersProvider } from "./suppliers-context";
 import { useSuppliers } from "./use-suppliers";
 
 const PAGE_SIZE = 10;
@@ -43,16 +42,11 @@ interface SuppliersScreenProps {
   readonly deletedName?: string | undefined;
 }
 
-/** The list of suppliers, for every role. */
+/**
+ * The list of suppliers, for every role. It reads the cached catalog of the
+ * suppliers store, so coming back to it does not ask the API again.
+ */
 export function SuppliersScreen({ canManage, deletedName }: SuppliersScreenProps) {
-  return (
-    <SuppliersProvider>
-      <SuppliersList canManage={canManage} deletedName={deletedName} />
-    </SuppliersProvider>
-  );
-}
-
-function SuppliersList({ canManage, deletedName }: SuppliersScreenProps) {
   const { list, reload } = useSuppliers();
   const [notice, setNotice] = useState(
     deletedName !== undefined && deletedName !== "" ? `Se eliminó el proveedor ${deletedName}.` : null,

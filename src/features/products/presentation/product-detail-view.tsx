@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { CatalogName } from "@/shared/presentation/catalog-name";
 import { Breadcrumbs, DataItem, MissingValue, MoneyText, Panel, Stat, StatGrid } from "@/shared/presentation/ui";
 
 import type { ProductDetail } from "../application/get-product-detail.use-case";
@@ -20,7 +20,7 @@ interface ProductDetailViewProps {
 
 /** One product: its prices with the margin, its stock and its supplier. */
 export function ProductDetailView({ detail, actions, adminPanel }: ProductDetailViewProps) {
-  const { product, supplier } = detail;
+  const { product } = detail;
 
   return (
     <article aria-labelledby="product-title" className="flex flex-col gap-6">
@@ -53,13 +53,12 @@ export function ProductDetailView({ detail, actions, adminPanel }: ProductDetail
       <Panel title="Datos del producto" titleId="product-data-title">
         <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
           <DataItem label="Proveedor">
-            {supplier !== null ? (
-              <Link href={`/proveedores/${supplier.id}`} className="text-primary hover:underline">
-                {supplier.name}
-              </Link>
-            ) : (
-              <MissingValue>Proveedor no disponible</MissingValue>
-            )}
+            <CatalogName
+              catalog="suppliers"
+              id={product.supplierId}
+              fallback={<MissingValue>Proveedor no disponible</MissingValue>}
+              href={`/proveedores/${product.supplierId}`}
+            />
           </DataItem>
           <DataItem label="Categoría">{product.category ?? <MissingValue>Sin categoría</MissingValue>}</DataItem>
           <DataItem label="Código de barras">

@@ -6,8 +6,8 @@ import { useState } from "react";
 import { errorMessage } from "@/shared/domain/errors";
 import { Alert, Button, ButtonLink, Modal, ModalActions } from "@/shared/presentation/ui";
 
-import { salesContainer } from "../di/container";
 import { SaleNotCancellableError } from "../domain/errors";
+import { useSales } from "./use-sales";
 
 interface SaleActionsProps {
   readonly saleId: string;
@@ -35,6 +35,7 @@ type Outcome =
  */
 export function SaleActions({ saleId, isAwaitingPayment, canCancel }: SaleActionsProps) {
   const router = useRouter();
+  const { cancelSale } = useSales();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -43,7 +44,7 @@ export function SaleActions({ saleId, isAwaitingPayment, canCancel }: SaleAction
     setIsCancelling(true);
     setOutcome(null);
     try {
-      await salesContainer().cancelSale.execute({ id: saleId, isAwaitingPayment });
+      await cancelSale({ id: saleId, isAwaitingPayment });
       setIsConfirming(false);
       setOutcome({ kind: "cancelled" });
       router.refresh();

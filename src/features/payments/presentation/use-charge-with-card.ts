@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { ValidationError, errorMessage, isRetryable } from "@/shared/domain/errors";
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import type { StartedCardPayment } from "../application/charge-with-card.use-case";
@@ -36,6 +37,8 @@ export function useChargeWithCard(saleId: string) {
     async (values: CardPaymentFormValues): Promise<CardChargeResult> => {
       try {
         const result = await paymentsContainer().chargeWithCard.execute(saleId, values, new Date());
+        // The sale now has a payment in progress.
+        notifyDataChanged("sales");
         return { kind: "started", result };
       } catch (error: unknown) {
         if (error instanceof InvalidCardPaymentError) {

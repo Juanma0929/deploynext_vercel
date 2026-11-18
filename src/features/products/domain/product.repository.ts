@@ -38,6 +38,4 @@ export interface SupplierName {
  */
 export interface SupplierNameRepository {
   list(): Promise<SupplierName[]>;
-  /** One supplier, or null if it does not exist. */
-  findById(id: string): Promise<SupplierName | null>;
 }
