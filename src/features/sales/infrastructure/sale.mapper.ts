@@ -1,5 +1,5 @@
 import { parseUtcTimestamp } from "@/shared/domain/calendar";
-import { ApiRequestError } from "@/shared/infrastructure/http";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/domain/errors";
 
 import {
   SaleNotCancellableError,
@@ -72,13 +72,11 @@ function toSpanish(message: string): string {
  * exists) becomes SaleRejectedError, carrying the message of the backend.
  */
 export function toCreateSaleError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-
-  if (error.status === 409) {
-    const message = error.messages.map(toSpanish).join(" ");
+  if (error instanceof ConflictError) {
+    const message = error.details.map(toSpanish).join(" ");
     return new SaleRejectedError(message || "Uno de los productos no tiene stock suficiente.");
   }
-  if (error.status === 404) {
+  if (error instanceof NotFoundError) {
     return new SaleRejectedError("Uno de los productos de la venta ya no existe.");
   }
   return error;
@@ -86,9 +84,8 @@ export function toCreateSaleError(error: unknown): unknown {
 
 /** GET /sales/:id: 404, or 400 for an id that is not a UUID, and 403 for another seller's sale. */
 export function toSaleLookupError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 404 || error.status === 400) return new SaleNotFoundError();
-  if (error.status === 403) return new SaleNotYoursError();
+  if (error instanceof NotFoundError || error instanceof ValidationError) return new SaleNotFoundError();
+  if (error instanceof ForbiddenError) return new SaleNotYoursError();
   return error;
 }
 
@@ -102,11 +99,10 @@ const CANCEL_CONFLICT_MESSAGES: Readonly<Record<string, string>> = {
 
 /** POST /sales/:id/cancel: 409 when it is not pending or has a payment in progress. */
 export function toCancelSaleError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 409) {
-    const message = error.messages.map((text) => CANCEL_CONFLICT_MESSAGES[text] ?? text).join(" ");
+  if (error instanceof ConflictError) {
+    const message = error.details.map((text) => CANCEL_CONFLICT_MESSAGES[text] ?? text).join(" ");
     return message === "" ? new SaleNotCancellableError() : new SaleNotCancellableError(message);
   }
-  if (error.status === 404) return new SaleNotFoundError();
+  if (error instanceof NotFoundError) return new SaleNotFoundError();
   return error;
 }

@@ -1,4 +1,4 @@
-import { AppError } from "@/shared/domain/errors";
+import { AppError, GatewayError, NetworkError } from "@/shared/domain/errors";
 
 import type { CardIssues } from "./card-details";
 
@@ -18,7 +18,7 @@ export class SaleNotChargeableError extends AppError {
  * the same request can be tried again. The message says what "nothing
  * changed" means for the call that failed.
  */
-export class PaymentGatewayError extends AppError {
+export class PaymentGatewayError extends GatewayError {
   constructor(message = "Wompi no respondió a tiempo. No se cobró nada: puedes intentarlo de nuevo.") {
     super(message);
     this.name = "PaymentGatewayError";
@@ -48,7 +48,7 @@ export class CardRejectedError extends AppError {
 }
 
 /** Wompi could not be reached to tokenise the card. Nothing was charged. */
-export class TokenizerUnavailableError extends AppError {
+export class TokenizerUnavailableError extends NetworkError {
   constructor() {
     super("No se pudo conectar con Wompi para validar la tarjeta. No se cobró nada: inténtalo de nuevo.");
     this.name = "TokenizerUnavailableError";

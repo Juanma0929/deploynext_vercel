@@ -1,4 +1,4 @@
-import { ApiRequestError } from "@/shared/infrastructure/http";
+import { ConflictError, NotFoundError, ValidationError } from "@/shared/domain/errors";
 
 import {
   DuplicateBarcodeError,
@@ -81,18 +81,16 @@ export function toUpdateProductDto(changes: ProductChanges): UpdateProductDto {
 }
 
 /** On create: 409, the barcode is taken; 404, the supplier does not exist. Anything else as is. */
-export function toProductWriteError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 409) return new DuplicateBarcodeError();
-  if (error.status === 404) return new ProductSupplierNotFoundError();
+export function toProductWriteError(error: unknown): unknown {
+  if (error instanceof ConflictError) return new DuplicateBarcodeError();
+  if (error instanceof NotFoundError) return new ProductSupplierNotFoundError();
   return error;
 }
 
 /** On delete: 409, sales reference the product; 404, it is already gone. */
-export function toProductDeleteError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 409) return new ProductHasSalesError();
-  if (error.status === 404 || error.status === 400) return new ProductNotFoundError();
+export function toProductDeleteError(error: unknown): unknown {
+  if (error instanceof ConflictError) return new ProductHasSalesError();
+  if (error instanceof NotFoundError || error instanceof ValidationError) return new ProductNotFoundError();
   return error;
 }
 
@@ -100,10 +98,9 @@ export function toProductDeleteError(error: unknown): unknown {
  * On update a 404 is either the product or the new supplier. If the supplier
  * was being changed, it is read as the supplier; otherwise, as the product.
  */
-export function toProductUpdateError(error: unknown, changes: ProductChanges): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 409) return new DuplicateBarcodeError();
-  if (error.status === 404) {
+export function toProductUpdateError(error: unknown, changes: ProductChanges): unknown {
+  if (error instanceof ConflictError) return new DuplicateBarcodeError();
+  if (error instanceof NotFoundError) {
     return changes.supplierId !== undefined
       ? new ProductSupplierNotFoundError()
       : new ProductNotFoundError();

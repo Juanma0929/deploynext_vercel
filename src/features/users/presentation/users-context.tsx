@@ -3,6 +3,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
+import { formErrorsFrom } from "@/shared/presentation/form-errors";
 import { onSessionReset } from "@/shared/presentation/session-reset";
 
 import { usersContainer } from "../di/container";
@@ -15,10 +16,21 @@ export type UsersListState =
   | { readonly status: "ready"; readonly users: readonly User[] }
   | { readonly status: "error"; readonly message: string };
 
-/** The result of a change. `field` says which input the message belongs to. */
+/** The fields of the user form, named as the API names them. */
+export const USER_FIELDS = ["name", "email", "password", "role"] as const;
+export type UserField = (typeof USER_FIELDS)[number];
+
+/**
+ * The result of a change. `fieldErrors` go next to their inputs (an email
+ * already taken, a 400 of the API); `message`, when there is one, goes above.
+ */
 export type UserActionResult =
   | { readonly ok: true }
-  | { readonly ok: false; readonly message: string; readonly field?: "email" };
+  | {
+      readonly ok: false;
+      readonly message: string | null;
+      readonly fieldErrors: Partial<Record<UserField, string>>;
+    };
 
 export interface UsersContextValue {
   /** The logged-in admin, for the rule that it cannot lock itself out. */
@@ -85,9 +97,10 @@ export function UsersProvider({ currentUserId, children }: UsersProviderProps) {
         return { ok: true };
       } catch (error: unknown) {
         if (error instanceof EmailAlreadyRegisteredError) {
-          return { ok: false, message: error.message, field: "email" };
+          return { ok: false, message: null, fieldErrors: { email: error.message } };
         }
-        return { ok: false, message: errorMessage(error) };
+        const { fields, message } = formErrorsFrom(error, USER_FIELDS);
+        return { ok: false, message, fieldErrors: fields };
       }
     },
     [upsert],

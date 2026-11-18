@@ -65,9 +65,8 @@ export function UserForm({ user, onDone, onCancel }: UserFormProps) {
 
     if (result.ok) {
       onDone();
-    } else if (result.field === "email") {
-      setErrors({ email: result.message });
     } else {
+      setErrors(result.fieldErrors);
       setFormError(result.message);
     }
   }

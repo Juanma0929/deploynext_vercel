@@ -1,4 +1,4 @@
-import { ApiRequestError } from "@/shared/infrastructure/http";
+import { UnauthorizedError } from "@/shared/domain/errors";
 
 import type { LoginCredentials } from "../domain/credentials";
 import {
@@ -37,13 +37,14 @@ export function toUser(dto: UserDto): User {
 
 /**
  * Translates a refused login into a domain error. Only the 401 has meaning of
- * its own; anything else (network, 400, 500) is returned unchanged.
+ * its own; anything else (network, 400, 500) is returned unchanged, already
+ * translated by the central mapper of the HTTP client.
  */
 export function toLoginError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError) || error.status !== 401) return error;
+  if (!(error instanceof UnauthorizedError)) return error;
 
-  if (error.messages.includes(API_MESSAGES.twoFactorRequired)) return new TwoFactorRequiredError();
-  if (error.messages.includes(API_MESSAGES.invalidTwoFactorCode)) {
+  if (error.details.includes(API_MESSAGES.twoFactorRequired)) return new TwoFactorRequiredError();
+  if (error.details.includes(API_MESSAGES.invalidTwoFactorCode)) {
     return new InvalidTwoFactorCodeError();
   }
   // "Invalid credentials" also covers an inactive user, and is the safe default.

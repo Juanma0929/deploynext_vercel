@@ -30,6 +30,7 @@ export { Badge, type Tone } from "./badge";
 export { Alert, LoadingText, RetryAlert } from "./alert";
 export { MoneyText } from "./money-text";
 export { Spinner } from "./spinner";
+export { SegmentError, SegmentLoading } from "./segment";
 export {
   Breadcrumbs,
   DataItem,

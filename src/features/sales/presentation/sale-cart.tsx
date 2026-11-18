@@ -3,7 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useState } from "react";
 
-import { Alert, Button, EmptyState, MoneyText, TextInput, describedBy, errorId } from "@/shared/presentation/ui";
+import {
+  Alert,
+  Button,
+  EmptyState,
+  MoneyText,
+  TextInput,
+  describedBy,
+  errorId,
+  useToast,
+} from "@/shared/presentation/ui";
 
 import type { DraftLine } from "../domain/sale-draft";
 import { useNewSale } from "./use-new-sale";
@@ -12,6 +21,7 @@ import { useNewSale } from "./use-new-sale";
 export function SaleCart() {
   const router = useRouter();
   const { draft, failure, isSubmitting, submit, dismissFailure } = useNewSale();
+  const { toast } = useToast();
   const [invalidLines, setInvalidLines] = useState<ReadonlySet<string>>(new Set());
 
   const markValidity = useCallback((productId: string, isValid: boolean) => {
@@ -26,7 +36,10 @@ export function SaleCart() {
 
   async function handleSubmit() {
     const result = await submit();
-    if (result.ok) router.push(`/ventas/${result.saleId}`);
+    if (result.ok) {
+      toast({ tone: "success", message: "Venta registrada. El stock ya se descontó." });
+      router.push(`/ventas/${result.saleId}`);
+    }
   }
 
   // Only lines still in the cart count: one removed by a refresh cannot block it.

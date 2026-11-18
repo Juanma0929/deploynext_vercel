@@ -2,12 +2,17 @@
 
 import { useCallback } from "react";
 
-import { errorMessage } from "@/shared/domain/errors";
+import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import { productsContainer } from "../di/container";
 import { DuplicateBarcodeError, ProductSupplierNotFoundError } from "../domain/errors";
 import { Product, type ProductProps } from "../domain/product";
-import { InvalidProductError, type ProductFormValues, type ProductIssues } from "../domain/product-input";
+import {
+  InvalidProductError,
+  type ProductField,
+  type ProductFormValues,
+  type ProductIssues,
+} from "../domain/product-input";
 
 export type SaveProductResult =
   | { readonly ok: true; readonly productId: string }
@@ -51,5 +56,19 @@ export function toFailure(error: unknown): Extract<SaveProductResult, { ok: fals
   if (error instanceof ProductSupplierNotFoundError) {
     return { ok: false, issues: { supplierId: error.message }, message: null };
   }
-  return { ok: false, issues: {}, message: errorMessage(error) };
+  // A 400 of the API: each message next to its field; anything else above the form.
+  const { fields, message } = formErrorsFrom(error, PRODUCT_FIELDS);
+  return { ok: false, issues: fields, message };
 }
+
+const PRODUCT_FIELDS: readonly ProductField[] = [
+  "name",
+  "description",
+  "category",
+  "barcode",
+  "purchasePrice",
+  "salePrice",
+  "currentStock",
+  "minimumStock",
+  "supplierId",
+];
