@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import { productsContainer } from "../di/container";
@@ -37,6 +38,8 @@ export function useSaveProduct(current: ProductProps | undefined) {
           current === undefined
             ? await createProduct.execute(values)
             : await updateProduct.execute(new Product(current), values);
+        // The cached catalog of products is stale now.
+        notifyDataChanged("products");
         return { ok: true, productId: product.id };
       } catch (error: unknown) {
         return toFailure(error);

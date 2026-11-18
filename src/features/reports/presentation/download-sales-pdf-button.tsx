@@ -7,10 +7,11 @@ import { errorMessage } from "@/shared/domain/errors";
 import { saveFile } from "@/shared/presentation/save-file";
 import { Button } from "@/shared/presentation/ui";
 
-import { reportsContainer } from "../di/container";
+import { useReports } from "./use-reports";
 
 /** Downloads the PDF of the period on screen, named sales-report-<from>_<to>.pdf. */
 export function DownloadSalesPdfButton({ range }: { readonly range: DateRange }) {
+  const { downloadSalesPdf } = useReports();
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +19,7 @@ export function DownloadSalesPdfButton({ range }: { readonly range: DateRange })
     setIsDownloading(true);
     setError(null);
     try {
-      const file = await reportsContainer().downloadSalesReportPdf.execute(range);
+      const file = await downloadSalesPdf(range);
       saveFile(file.content, file.fileName);
     } catch (downloadError: unknown) {
       setError(errorMessage(downloadError));

@@ -28,7 +28,7 @@ import type { SalesReport } from "../domain/reports";
 import { longDay, shortDay } from "./day-format";
 import { DownloadSalesPdfButton } from "./download-sales-pdf-button";
 import { SalesPeriodChart } from "./sales-period-chart";
-import { useSalesReport } from "./use-sales-report";
+import { useReports } from "./use-reports";
 
 type Preset = "today" | "week" | "month" | "custom";
 
@@ -61,7 +61,7 @@ const PERCENT = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
 export function SalesPeriodReport() {
   const [preset, setPreset] = useState<Preset>("week");
   const [range, setRange] = useState<DateRange>(() => presetRange("week", new Date()));
-  const sales = useSalesReport(range);
+  const { sales } = useReports({ salesRange: range });
 
   function choosePreset(next: Exclude<Preset, "custom">) {
     setPreset(next);
@@ -117,7 +117,7 @@ export function SalesPeriodReport() {
 
       {sales.status === "error" && <RetryAlert message={sales.message} onRetry={sales.reload} />}
 
-      {sales.status === "ready" && <ReportBody report={sales.report} />}
+      {sales.status === "ready" && <ReportBody report={sales.data} />}
     </section>
   );
 }

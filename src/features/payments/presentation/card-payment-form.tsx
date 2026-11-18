@@ -14,7 +14,7 @@ import {
 import { MAX_INSTALLMENTS, MIN_INSTALLMENTS } from "../domain/payment-request";
 import { ChargeStarted, NotChargeable } from "./payment-outcome";
 import { SandboxOptions } from "./sandbox-options";
-import { useChargeWithCard } from "./use-charge-with-card";
+import { usePayment } from "./use-payment";
 
 /** The cards of the Wompi sandbox: the result depends only on the number. */
 const SANDBOX_CARDS = [
@@ -41,7 +41,7 @@ interface CardPaymentFormProps {
  * charge starts.
  */
 export function CardPaymentForm({ saleId, totalLabel }: CardPaymentFormProps) {
-  const charge = useChargeWithCard(saleId);
+  const charge = usePayment(saleId).chargeWithCard;
   const formRef = useRef<HTMLFormElement>(null);
   const ids = {
     customerEmail: useId(),

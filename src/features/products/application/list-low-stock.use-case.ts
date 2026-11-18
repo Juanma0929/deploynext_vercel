@@ -33,12 +33,3 @@ export class ListLowStockUseCase {
 function shortfall(product: Product): number {
   return product.minimumStock - product.currentStock;
 }
-
-/** Only how many products are low, for the alert of the home page: one request. */
-export class CountLowStockUseCase {
-  constructor(private readonly products: ProductRepository) {}
-
-  async execute(): Promise<number> {
-    return (await this.products.listLowStock()).length;
-  }
-}

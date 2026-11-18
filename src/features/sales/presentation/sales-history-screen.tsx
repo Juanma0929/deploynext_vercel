@@ -33,7 +33,7 @@ import { filterSaleHistory } from "../domain/sale-history-filters";
 import { SALE_STATUSES, isSaleStatus, type SaleStatus } from "../domain/sale-status";
 import { SaleStatusBadge } from "./sale-status-badge";
 import { SALE_STATUS_PLURALS } from "./sale-status-labels";
-import { useSalesHistory } from "./use-sales-history";
+import { useSales } from "./use-sales";
 
 const PAGE_SIZE = 15;
 const NO_SALES: readonly Sale[] = [];
@@ -64,7 +64,7 @@ const NO_FILTERS: Filters = { from: "", to: "", status: null, sellerId: null };
 
 /** Every sale of the business, filtered in the front. Admin only (sales:history). */
 export function SalesHistoryScreen() {
-  const history = useSalesHistory();
+  const { history } = useSales({ history: true });
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [pageNumber, setPageNumber] = useState(1);
 

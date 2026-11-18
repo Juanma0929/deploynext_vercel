@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { BUSINESS_TIME_ZONE } from "@/shared/domain/calendar";
+import { CatalogName } from "@/shared/presentation/catalog-name";
 import {
   Breadcrumbs,
   DataItem,
@@ -30,9 +31,12 @@ interface SaleDetailViewProps {
   readonly actions?: ReactNode;
 }
 
-/** A sale, its items with the product names and how it was paid. Rendered on the server. */
+/**
+ * A sale, its items and how it was paid. Rendered on the server; the names of
+ * the products come from the cached catalog of the browser (CatalogName).
+ */
 export function SaleDetailView({ detail, actions }: SaleDetailViewProps) {
-  const { sale, productNames } = detail;
+  const { sale } = detail;
 
   return (
     <article aria-labelledby="sale-title" className="flex flex-col gap-6">
@@ -82,9 +86,11 @@ export function SaleDetailView({ detail, actions }: SaleDetailViewProps) {
             {sale.lines.map((line) => (
               <TableRow key={line.productId}>
                 <TableCell className="font-medium">
-                  {productNames.get(line.productId) ?? (
-                    <span className="text-muted font-normal">Producto no disponible</span>
-                  )}
+                  <CatalogName
+                    catalog="products"
+                    id={line.productId}
+                    fallback={<span className="text-muted font-normal">Producto no disponible</span>}
+                  />
                 </TableCell>
                 <TableCell align="right" className="tabular-nums">
                   {line.quantity}

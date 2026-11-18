@@ -14,11 +14,11 @@ import {
 } from "@/shared/presentation/ui";
 
 import { DASHBOARD_DAYS } from "../application/get-admin-dashboard.use-case";
-import { useAdminDashboard } from "./use-admin-dashboard";
+import { useReports } from "./use-reports";
 
 /** The home page of an admin: a summary of the reports and the way to see them all. */
 export function AdminDashboard() {
-  const dashboard = useAdminDashboard();
+  const { dashboard } = useReports({ dashboard: true });
 
   return (
     <section aria-labelledby="admin-dashboard-title" className="flex flex-col gap-6">

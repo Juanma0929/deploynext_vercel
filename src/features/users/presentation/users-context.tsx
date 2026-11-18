@@ -1,15 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useMemo, type ReactNode } from "react";
 
-import { errorMessage } from "@/shared/domain/errors";
 import { formErrorsFrom } from "@/shared/presentation/form-errors";
-import { onSessionReset } from "@/shared/presentation/session-reset";
+import { loadStateOf, useResource } from "@/shared/presentation/store";
 
 import { usersContainer } from "../di/container";
 import { EmailAlreadyRegisteredError } from "../domain/errors";
 import type { User } from "../domain/user";
 import type { NewUser, UserChanges } from "../domain/user-input";
+import { upsertUser, usersResource } from "./users-store";
 
 export type UsersListState =
   | { readonly status: "loading" }
@@ -50,50 +50,23 @@ interface UsersProviderProps {
   readonly children: ReactNode;
 }
 
-/** The store of users: the list, loaded once, and the changes that keep it up to date. */
+/**
+ * Gives the screen of users who is logged in; the list itself lives in the
+ * users store (users-store.ts), loaded once and emptied on logout.
+ */
 export function UsersProvider({ currentUserId, children }: UsersProviderProps) {
-  const [list, setList] = useState<UsersListState>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
+  const state = loadStateOf(useResource(usersResource, "cached"));
+  const list = useMemo<UsersListState>(
+    () => (state.status === "ready" ? { status: "ready", users: state.data } : state),
+    [state],
+  );
 
-  useEffect(() => {
-    let isCurrent = true;
-
-    usersContainer()
-      .listUsers.execute()
-      .then((users) => {
-        if (isCurrent) setList({ status: "ready", users });
-      })
-      .catch((error: unknown) => {
-        if (isCurrent) setList({ status: "error", message: errorMessage(error) });
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [attempt]);
-
-  // Nothing of the users of the business survives a logout.
-  useEffect(() => onSessionReset(() => setList({ status: "loading" })), []);
-
-  const reload = useCallback(() => {
-    setList({ status: "loading" });
-    setAttempt((value) => value + 1);
-  }, []);
-
-  /** Puts the saved user in the list, replacing it if it was already there. */
-  const upsert = useCallback((saved: User) => {
-    setList((current) => {
-      if (current.status !== "ready") return current;
-      const others = current.users.filter((user) => user.id !== saved.id);
-      const users = [...others, saved].sort((a, b) => a.name.localeCompare(b.name, "es"));
-      return { status: "ready", users };
-    });
-  }, []);
+  const reload = useCallback(() => void usersResource.reload(), []);
 
   const run = useCallback(
     async (action: () => Promise<User>): Promise<UserActionResult> => {
       try {
-        upsert(await action());
+        upsertUser(await action());
         return { ok: true };
       } catch (error: unknown) {
         if (error instanceof EmailAlreadyRegisteredError) {
@@ -103,7 +76,7 @@ export function UsersProvider({ currentUserId, children }: UsersProviderProps) {
         return { ok: false, message, fieldErrors: fields };
       }
     },
-    [upsert],
+    [],
   );
 
   const value = useMemo<UsersContextValue>(() => {

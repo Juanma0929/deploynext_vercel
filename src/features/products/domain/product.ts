@@ -66,6 +66,15 @@ export class Product {
   }
 
   /**
+   * Whether it has to be restocked: active and in low stock, the same rule as
+   * GET /products/low-stock. An inactive product is not sold, so it is not
+   * restocked either.
+   */
+  get needsRestock(): boolean {
+    return this.isActive && this.isLowStock;
+  }
+
+  /**
    * What each unit leaves: salePrice − purchasePrice. It can be negative,
    * since the API allows selling below cost.
    */

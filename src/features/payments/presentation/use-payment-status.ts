@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 
 import { paymentsContainer } from "../di/container";
 import { NoPaymentToCheckError, PaymentGatewayError } from "../domain/errors";
 import { isFinalStatus, PAYMENT_POLLING, type SalePaymentStatus } from "../domain/payment-status";
+import { paymentStatuses, rememberPaymentStatus } from "./payments-store";
 
 export type PaymentStatusState =
   /** Asking every few seconds while the payment is pending. */
@@ -43,9 +45,14 @@ export function usePaymentStatus(
   initialStatus: SalePaymentStatus,
   options: PaymentStatusOptions = {},
 ) {
-  const [state, setState] = useState<PaymentStatusState>(() => stateOf(initialStatus));
+  // A status settled earlier in this session wins over the one the page was rendered with.
+  const [startStatus] = useState(() => {
+    const known = paymentStatuses.get()[saleId];
+    return known !== undefined && isFinalStatus(known) ? known : initialStatus;
+  });
+  const [state, setState] = useState<PaymentStatusState>(() => stateOf(startStatus));
   // Each round is one minute of polling; 0 means "do not poll".
-  const [round, setRound] = useState(isFinalStatus(initialStatus) ? 0 : 1);
+  const [round, setRound] = useState(isFinalStatus(startStatus) ? 0 : 1);
 
   // The latest callback, without restarting the polling when it changes.
   const onSettled = useRef(options.onSettled);
@@ -68,6 +75,9 @@ export function usePaymentStatus(
 
         if (isFinalStatus(status)) {
           setState(stateOf(status));
+          rememberPaymentStatus(saleId, status);
+          // Approved or declined: the sale changed, and a declined one gave its stock back.
+          notifyDataChanged("sales", "products");
           onSettled.current?.(status);
           return;
         }

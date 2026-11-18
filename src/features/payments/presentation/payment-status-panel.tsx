@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Alert, Button, ButtonLink, Spinner } from "@/shared/presentation/ui";
 
 import type { SalePaymentStatus } from "../domain/payment-status";
-import { usePaymentStatus } from "./use-payment-status";
+import { usePaymentStatus } from "./use-payment";
 
 /** The new sale screen, filled with the products of a declined sale. */
 const NEW_SALE_FROM = (saleId: string) => `/ventas/nueva?desde=${encodeURIComponent(saleId)}`;

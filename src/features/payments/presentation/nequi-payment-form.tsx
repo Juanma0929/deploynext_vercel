@@ -13,7 +13,7 @@ import {
 import type { StartedPayment } from "../domain/payment.repository";
 import { ChargeStarted, NotChargeable } from "./payment-outcome";
 import { SandboxOptions } from "./sandbox-options";
-import { useChargeWithNequi } from "./use-charge-with-nequi";
+import { usePayment } from "./use-payment";
 
 /** The numbers of the Wompi sandbox: the result does not depend on any phone. */
 const SANDBOX_NUMBERS = [
@@ -33,7 +33,7 @@ interface NequiPaymentFormProps {
  * to the customer's phone and the sale stays pending until it is answered.
  */
 export function NequiPaymentForm({ saleId, totalLabel }: NequiPaymentFormProps) {
-  const charge = useChargeWithNequi(saleId);
+  const charge = usePayment(saleId).chargeWithNequi;
   const ids = { customerEmail: useId(), phoneNumber: useId() } satisfies Record<
     NequiPaymentField,
     string

@@ -16,7 +16,7 @@ import {
 } from "@/shared/presentation/ui";
 
 import type { SaleProduct } from "../domain/sale-product";
-import { useNewSale } from "./use-new-sale";
+import { useSales } from "./use-sales";
 
 /** How many matches the picker lists at once; the search narrows the rest. */
 const VISIBLE_LIMIT = 30;
@@ -27,7 +27,7 @@ const VISIBLE_LIMIT = 30;
  * one whose barcode is exactly what was typed, as a scanner does.
  */
 export function ProductPicker() {
-  const { products, draft, add, reloadProducts } = useNewSale();
+  const { products, draft, add, reloadProducts } = useSales().cart;
   const searchId = useId();
   const [term, setTerm] = useState("");
   const [error, setError] = useState<string | null>(null);

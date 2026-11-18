@@ -6,9 +6,9 @@ import { useState } from "react";
 import { errorMessage } from "@/shared/domain/errors";
 import { Alert, Button, Modal, ModalActions } from "@/shared/presentation/ui";
 
-import { suppliersContainer } from "../di/container";
 import { SupplierHasProductsError, SupplierNotFoundError } from "../domain/errors";
 import { DELETED_SUPPLIER_PARAM, SUPPLIER_PRODUCTS_ANCHOR } from "./supplier-anchors";
+import { useSuppliers } from "./use-suppliers";
 
 type Failure =
   | { readonly kind: "has-products"; readonly message: string }
@@ -22,6 +22,7 @@ interface DeleteSupplierButtonProps {
 /** "Eliminar", with a confirmation first. Deleting cannot be undone. */
 export function DeleteSupplierButton({ supplierId, supplierName }: DeleteSupplierButtonProps) {
   const router = useRouter();
+  const { deleteSupplier } = useSuppliers();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
@@ -41,7 +42,7 @@ export function DeleteSupplierButton({ supplierId, supplierName }: DeleteSupplie
     setIsDeleting(true);
     setFailure(null);
     try {
-      await suppliersContainer().deleteSupplier.execute(supplierId);
+      await deleteSupplier(supplierId);
       goToList();
       return;
     } catch (error: unknown) {

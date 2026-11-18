@@ -3,6 +3,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 import { onSessionReset } from "@/shared/presentation/session-reset";
 
 import { salesContainer } from "../di/container";
@@ -150,6 +151,8 @@ export function NewSaleProvider({ children, fromSaleId }: NewSaleProviderProps) 
 
     try {
       const sale = await createSale.execute(draft);
+      // The stock moved and there is a new sale: both stores are stale now.
+      notifyDataChanged("sales", "products");
       return { ok: true, saleId: sale.id };
     } catch (error: unknown) {
       if (!(error instanceof SaleRejectedError)) {

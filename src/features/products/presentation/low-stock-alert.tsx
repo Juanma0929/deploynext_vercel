@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { LOW_STOCK_PATH } from "./inventory-search-params";
-import { useLowStockCount } from "./use-low-stock-count";
+import { useProducts } from "./use-products";
 
 /**
  * The counter of the home page, for every role: how many products are at or
@@ -11,7 +11,7 @@ import { useLowStockCount } from "./use-low-stock-count";
  * are none, while it loads, or if the request failed.
  */
 export function LowStockAlert() {
-  const count = useLowStockCount();
+  const count = useProducts().lowStockCount;
   if (count === null || count === 0) return null;
 
   // An <aside> and not an Alert: it is a standing hint of the home page, not a

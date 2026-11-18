@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { ValidationError, errorMessage, isRetryable } from "@/shared/domain/errors";
+import { notifyDataChanged } from "@/shared/presentation/data-changes";
 import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import { paymentsContainer } from "../di/container";
@@ -32,6 +33,8 @@ export function useChargeWithNequi(saleId: string) {
     async (values: NequiPaymentValues): Promise<ChargeResult> => {
       try {
         const payment = await paymentsContainer().chargeWithNequi.execute(saleId, values);
+        // The sale now has a payment in progress.
+        notifyDataChanged("sales");
         return { kind: "started", payment };
       } catch (error: unknown) {
         if (error instanceof InvalidPaymentRequestError) {
