@@ -1,5 +1,8 @@
 import { browserHttpClient, browserTokenStorage } from "@/shared/di/http";
 
+/** Every 403 of the API, for the notice of the app shell. */
+export { onForbiddenResponse } from "@/shared/di/http";
+
 import { GetProfileUseCase } from "../application/get-profile.use-case";
 import { HasSessionUseCase } from "../application/has-session.use-case";
 import { LoginUseCase } from "../application/login.use-case";

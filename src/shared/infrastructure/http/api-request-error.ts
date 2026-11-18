@@ -18,7 +18,11 @@ export class ApiRequestError extends AppError {
     readonly status: number,
     messages: readonly string[],
   ) {
-    super(messages.length > 0 ? messages.join(" ") : defaultMessage(status));
+    // The API writes its 403 for developers ("The user is not an admin"), so
+    // the user always reads the Spanish one; `messages` keeps the original.
+    super(
+      messages.length > 0 && status !== 403 ? messages.join(" ") : defaultMessage(status),
+    );
     this.name = "ApiRequestError";
     this.messages = messages;
   }

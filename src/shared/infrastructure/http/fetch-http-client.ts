@@ -15,6 +15,8 @@ export interface FetchHttpClientConfig {
   readonly tokenStorage: TokenStorage;
   /** Called after a 401 outside the login, once the token is cleared. */
   readonly onSessionExpired: () => void;
+  /** Called on every 403, before the error is thrown to the caller. */
+  readonly onForbidden: () => void;
 }
 
 /**
@@ -25,6 +27,9 @@ export interface FetchHttpClientConfig {
  * - on a 401 outside the login it ends the session: it clears the token and
  *   calls onSessionExpired, which sends the user to /login. A 401 from the
  *   login means wrong credentials, so there it is only an error;
+ * - on a 403 it calls onForbidden, so the app can warn the user even if the
+ *   caller does not handle the error. The interface hides what a role cannot
+ *   do, so a 403 means the hiding missed something or the role just changed;
  * - every failure throws an ApiRequestError, with `message` read whether the
  *   API sent a string or an array;
  * - a 204 is returned as undefined, without reading the body.
@@ -103,7 +108,9 @@ export class FetchHttpClient implements HttpClient {
       this.config.onSessionExpired();
     }
 
-    throw new ApiRequestError(response.status, await this.readMessages(response));
+    const error = new ApiRequestError(response.status, await this.readMessages(response));
+    if (response.status === 403) this.config.onForbidden();
+    throw error;
   }
 
   private buildUrl(path: string, query?: Readonly<Record<string, QueryValue>>): string {
