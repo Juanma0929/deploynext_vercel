@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { SalesPeriodReport, TopProductsReport } from "@/features/reports/presentation";
+import { LowStockReport, SalesPeriodReport, TopProductsReport } from "@/features/reports/presentation";
 
 export const metadata: Metadata = {
   title: "Reportes",
@@ -18,6 +18,7 @@ export default function ReportsPage() {
       </header>
       <SalesPeriodReport />
       <TopProductsReport />
+      <LowStockReport />
     </section>
   );
 }

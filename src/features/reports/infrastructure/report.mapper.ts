@@ -35,6 +35,7 @@ export function toLowStockProduct(dto: LowStockRowDto): LowStockProduct {
     name: dto.name,
     currentStock: dto.currentStock,
     minimumStock: dto.minimumStock,
+    supplierId: dto.supplierId,
     supplierName: dto.supplierName,
   };
 }
