@@ -92,10 +92,21 @@ export function toSaleLookupError(error: unknown): unknown {
   return error;
 }
 
+/** The two 409 of POST /sales/:id/cancel, in Spanish. Unknown ones go through as the API wrote them. */
+const CANCEL_CONFLICT_MESSAGES: Readonly<Record<string, string>> = {
+  "A sale with a payment in progress cannot be cancelled":
+    "Esta venta ya tiene un pago iniciado, así que no se puede cancelar.",
+  "Only pending sales without a payment in progress can be cancelled":
+    "Esta venta ya no está pendiente (se cobró, se rechazó o ya se canceló), así que no se puede cancelar.",
+};
+
 /** POST /sales/:id/cancel: 409 when it is not pending or has a payment in progress. */
 export function toCancelSaleError(error: unknown): unknown {
   if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 409) return new SaleNotCancellableError();
+  if (error.status === 409) {
+    const message = error.messages.map((text) => CANCEL_CONFLICT_MESSAGES[text] ?? text).join(" ");
+    return message === "" ? new SaleNotCancellableError() : new SaleNotCancellableError(message);
+  }
   if (error.status === 404) return new SaleNotFoundError();
   return error;
 }
