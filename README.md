@@ -17,6 +17,7 @@ Computación en Internet III — Universidad Icesi, 2026B.
 - [Cómo correrlo](#cómo-correrlo)
 - [Variables de entorno](#variables-de-entorno)
 - [Scripts](#scripts)
+- [Cómo probar cada funcionalidad](#cómo-probar-cada-funcionalidad)
 - [Pruebas](#pruebas)
 - [Despliegue y CI/CD](#despliegue-y-cicd)
 - [Arquitectura](#arquitectura)
@@ -37,6 +38,15 @@ npm run dev                  # next dev -p 3001 → http://localhost:3001
 El frontend corre en el puerto **3001** porque el CORS del backend tiene ese origen permitido en
 desarrollo (y la API ocupa el 3000).
 
+Hay dos formas de tener la API:
+
+- **Local:** correr el backend (`icesi-2026b-nestjs-taller-group-4`, ver su README) y usar
+  `NEXT_PUBLIC_API_URL=http://localhost:3000`.
+- **La de producción:** `NEXT_PUBLIC_API_URL=https://stockpyme-api-g4.onrender.com`. Funciona desde
+  `http://localhost:3001` porque ese origen está en su `CORS_ORIGINS`.
+
+Para probar el build de producción en local: `npm run build && npm run start`.
+
 ## Variables de entorno
 
 | Variable | Archivo | Descripción |
@@ -53,6 +63,9 @@ Las variables `NEXT_PUBLIC_*` se **incrustan en el build**: si cambian, hay que 
 Ningún `.env*` se commitea (`.gitignore`), salvo las plantillas `.env.example` y
 `.env.e2e.example`, que documentan las variables.
 
+Las variables del backend (base de datos, `JWT_SECRET`, llaves privadas de Wompi, usuarios del seed,
+`CORS_ORIGINS`) están documentadas en el `.env.example` y el README del repo de la API.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -64,6 +77,76 @@ Ningún `.env*` se commitea (`.gitignore`), salvo las plantillas `.env.example` 
 | `npm run typecheck` | TypeScript en modo strict, sin emitir archivos |
 | `npm test` | Pruebas unitarias con Vitest (`npm run test:watch` para dejarlas corriendo) |
 | `npm run test:e2e` | Pruebas E2E con Playwright contra la API real (`npm run test:e2e:ui` para el modo visual) |
+
+## Cómo probar cada funcionalidad
+
+Se puede hacer en producción (https://deploynext-vercel.vercel.app) o en local. Los usuarios son
+los del seed de la API: **admin** (`admin@stockpyme.com`) y **seller** (`seller@stockpyme.com`), con
+las contraseñas `SEED_ADMIN_PASSWORD` y `SEED_SELLER_PASSWORD` configuradas en esa API.
+
+> La primera carga puede tardar hasta un minuto: el plan gratis de Render duerme la API, y `/login`
+> muestra "Conectando con el servidor…" mientras despierta.
+
+### Datos de prueba de Wompi (sandbox)
+
+No se cobra dinero real. El formulario de cobro ofrece estos valores con un clic:
+
+| Método | Aprueba | Rechaza |
+| --- | --- | --- |
+| Nequi (teléfono) | `3991111111` | `3992222222` |
+| Tarjeta (número) | `4242 4242 4242 4242` | `4111 1111 1111 1111` |
+
+Para la tarjeta sirve cualquier fecha futura, cualquier CVC de 3 dígitos y cualquier nombre.
+
+### Autenticación y rutas protegidas
+
+| Qué probar | Cómo | Resultado esperado |
+| --- | --- | --- |
+| Login correcto | `/login` con admin o seller | Entra al inicio y muestra el nombre y el rol |
+| Login fallido | Contraseña equivocada | Se queda en `/login` con "Correo o contraseña incorrectos." |
+| Ruta protegida sin sesión | Abrir `/productos` en una ventana privada | Redirige a `/login?next=/productos`, y tras entrar vuelve ahí |
+| Sesión vencida | Esperar 1 hora (o borrar la cookie) y navegar | Lleva a `/login` con "Tu sesión expiró" |
+| Logout | Botón de cerrar sesión del menú | Vuelve a `/login`; con "Atrás" no se ve nada privado |
+
+### Permisos por rol
+
+| Qué probar | Cómo | Resultado esperado |
+| --- | --- | --- |
+| Menú del seller | Entrar como seller | No aparecen Reportes, Usuarios ni Historial de ventas |
+| Acceso por URL | Como seller, abrir `/reportes` o `/usuarios` | "Acceso denegado" |
+| Acciones ocultas | Como seller, abrir un producto o un proveedor | No aparecen Editar, Eliminar ni Nuevo |
+| Admin | Entrar como admin | Ve todo el menú y todas las acciones |
+
+### Por funcionalidad
+
+| Funcionalidad | Ruta | Rol | Cómo probarla |
+| --- | --- | --- | --- |
+| Inicio | `/` | Ambos | El admin ve el panel del negocio (ventas, más vendidos, stock bajo); el seller, sus ventas del día y accesos rápidos |
+| Proveedores: lista y detalle | `/proveedores`, `/proveedores/[id]` | Ambos | Buscar por nombre y abrir uno |
+| Proveedores: crear y editar | `/proveedores/nuevo`, `/proveedores/[id]/editar` | Admin | Enviar el formulario vacío muestra el error en cada campo; con datos válidos aparece "guardado" y vuelve al detalle |
+| Proveedores: eliminar | Detalle → Eliminar | Admin | Pide confirmación en un modal; si tiene productos, la API lo impide y se muestra el motivo |
+| Inventario | `/productos` | Ambos | Buscar, filtrar por categoría o "Solo stock bajo", y paginar |
+| Detalle de producto | `/productos/[id]` | Ambos | Muestra precios, stock y el nombre del proveedor (con enlace) |
+| Crear y editar producto | `/productos/nuevo`, `/productos/[id]/editar` | Admin | Un código de barras repetido muestra el error en ese campo |
+| Eliminar o desactivar producto | Detalle → Eliminar | Admin | Si tiene ventas no se puede eliminar y ofrece "Desactivar en su lugar"; un inactivo no aparece al vender |
+| Stock bajo | `/productos/stock-bajo` | Ambos | Lista los productos con stock actual ≤ mínimo; la alerta del inventario lleva aquí |
+| Nueva venta | `/ventas/nueva` | Ambos | Buscar por nombre o código de barras, agregar al carrito y cambiar cantidades (no deja pasar del stock) → "Cobrar" crea la venta pendiente |
+| Cobro con Nequi | `/ventas/[id]/cobrar` | Ambos | Correo del cliente + `3991111111` → "Esperando confirmación…" y luego "Pago aprobado."; con `3992222222`, rechazado |
+| Cobro con tarjeta | `/ventas/[id]/cobrar` | Ambos | `4242 4242 4242 4242` → aprobado; `4111 1111 1111 1111` → rechazado. La tarjeta va directo a Wompi, no al backend |
+| Ventas de hoy | `/ventas` | Ambos | La venta recién hecha aparece con su estado (pendiente, pagada, rechazada, cancelada) |
+| Detalle de venta | `/ventas/[id]` | Ambos | Líneas con nombre de producto, cantidades, total y estado del pago |
+| Cancelar venta | Detalle → Cancelar venta | Admin | Solo en ventas pendientes; pide confirmación y el stock se devuelve |
+| Historial de ventas | `/ventas/historial` | Admin | Todas las ventas, con filtros y paginación |
+| Reportes | `/reportes` | Admin | Ventas pagadas por día en un rango (desde / hasta), más vendidos con su límite, productos por agotarse, y "Descargar PDF" del período (`sales-report-<desde>_<hasta>.pdf`) |
+| Usuarios | `/usuarios` | Admin | "Nuevo usuario" (correo repetido → error en el campo), "Editar usuario" (nombre, correo, rol, nueva contraseña, cuenta activa) y "Desactivar" con confirmación |
+
+### Errores y estados
+
+| Qué probar | Cómo | Resultado esperado |
+| --- | --- | --- |
+| Sin conexión | DevTools → Network → Offline, y recargar una lista | Mensaje "No se pudo conectar con el servidor" con "Reintentar" |
+| Página inexistente | Abrir `/productos/no-existe` | Página 404 del área privada |
+| Carga | Abrir cualquier lista con la red en "Slow 4G" | Indicador de carga en vez de una pantalla vacía |
 
 ## Pruebas
 
