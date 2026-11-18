@@ -113,17 +113,13 @@ jobs:
       - name: Instalar la CLI de Vercel
         run: npm install --global vercel@latest
 
-      # Downloads the project settings and its Production variables
-      # (NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WOMPI_PUBLIC_KEY).
-      - name: Traer la configuración de Vercel
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Construir
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
+      # The build runs on Vercel, not here: Vercel's Sensitive variables
+      # (NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WOMPI_PUBLIC_KEY) are only readable
+      # inside its own builds. `vercel pull` + `vercel build` in the runner
+      # would bake the placeholder "[SENSITIVE]" into the bundle instead.
       - name: Desplegar
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Desplegado en $url"
