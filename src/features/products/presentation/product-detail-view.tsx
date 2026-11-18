@@ -6,10 +6,17 @@ import { INVENTORY_PATH } from "./inventory-search-params";
 
 interface ProductDetailViewProps {
   readonly detail: ProductDetail;
+  /**
+   * What only an admin sees: the actions of the header ("Editar") and the
+   * quick adjustments below the data. The route decides them with the
+   * permission matrix of auth, so products does not import auth.
+   */
+  readonly actions?: ReactNode;
+  readonly adminPanel?: ReactNode;
 }
 
 /** One product: its prices with the margin, its stock and its supplier. */
-export function ProductDetailView({ detail }: ProductDetailViewProps) {
+export function ProductDetailView({ detail, actions, adminPanel }: ProductDetailViewProps) {
   const { product, supplier } = detail;
   const margin = product.margin;
 
@@ -23,19 +30,22 @@ export function ProductDetailView({ detail }: ProductDetailViewProps) {
         <span aria-current="page">{product.name}</span>
       </nav>
 
-      <header className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 id="product-title" className="text-2xl font-semibold">
-            {product.name}
-          </h1>
-          {product.isActive ? (
-            <Badge tone="bg-emerald-100 text-emerald-900">Activo</Badge>
-          ) : (
-            <Badge tone="bg-slate-200 text-slate-700">Inactivo</Badge>
-          )}
-          {product.isLowStock && <Badge tone="bg-red-100 text-red-800">Stock bajo</Badge>}
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 id="product-title" className="text-2xl font-semibold">
+              {product.name}
+            </h1>
+            {product.isActive ? (
+              <Badge tone="bg-emerald-100 text-emerald-900">Activo</Badge>
+            ) : (
+              <Badge tone="bg-slate-200 text-slate-700">Inactivo</Badge>
+            )}
+            {product.isLowStock && <Badge tone="bg-red-100 text-red-800">Stock bajo</Badge>}
+          </div>
+          {product.description !== null && <p className="text-muted">{product.description}</p>}
         </div>
-        {product.description !== null && <p className="text-muted">{product.description}</p>}
+        {actions}
       </header>
 
       <dl className="grid gap-3 sm:grid-cols-3">
@@ -77,6 +87,8 @@ export function ProductDetailView({ detail }: ProductDetailViewProps) {
           </Field>
         </dl>
       </section>
+
+      {adminPanel}
     </article>
   );
 }

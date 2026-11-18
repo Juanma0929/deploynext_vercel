@@ -30,6 +30,23 @@ export interface CreateProductDto {
   readonly supplierId: string;
 }
 
+/**
+ * The body of PATCH /products/:id: only the fields that changed. null clears
+ * an optional field; the API accepts it because they are @IsOptional().
+ */
+export interface UpdateProductDto {
+  readonly name?: string;
+  readonly description?: string | null;
+  readonly category?: string | null;
+  readonly barcode?: string | null;
+  readonly purchasePrice?: number;
+  readonly salePrice?: number;
+  readonly currentStock?: number;
+  readonly minimumStock?: number;
+  readonly supplierId?: string;
+  readonly isActive?: boolean;
+}
+
 /** The fields of GET /suppliers that products needs. */
 export interface SupplierNameDto {
   readonly id: string;

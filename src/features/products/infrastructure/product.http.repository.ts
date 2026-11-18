@@ -2,7 +2,7 @@ import { ApiRequestError, type HttpClient } from "@/shared/infrastructure/http";
 
 import { ProductNotFoundError } from "../domain/errors";
 import type { Product } from "../domain/product";
-import type { ProductDraft } from "../domain/product-input";
+import type { ProductChanges, ProductDraft } from "../domain/product-input";
 import type {
   ProductRepository,
   SupplierName,
@@ -12,8 +12,10 @@ import type { ProductDto, SupplierNameDto } from "./dto/product.dto";
 import {
   toCreateProductDto,
   toProduct,
+  toProductUpdateError,
   toProductWriteError,
   toSupplierName,
+  toUpdateProductDto,
 } from "./product.mapper";
 
 export class ProductHttpRepository implements ProductRepository {
@@ -29,6 +31,15 @@ export class ProductHttpRepository implements ProductRepository {
       return toProduct(await this.http.post<ProductDto>("/products", toCreateProductDto(draft)));
     } catch (error: unknown) {
       throw toProductWriteError(error);
+    }
+  }
+
+  async update(id: string, changes: ProductChanges): Promise<Product> {
+    try {
+      const path = `/products/${encodeURIComponent(id)}`;
+      return toProduct(await this.http.patch<ProductDto>(path, toUpdateProductDto(changes)));
+    } catch (error: unknown) {
+      throw toProductUpdateError(error, changes);
     }
   }
 

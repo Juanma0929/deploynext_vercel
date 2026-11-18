@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 
+import { Product, type ProductProps } from "../domain/product";
 import type { SupplierName } from "../domain/product.repository";
 import {
+  formValuesOf,
   hasIssues,
   productIssues,
   sellsBelowCost,
@@ -14,7 +16,7 @@ import {
   type ProductIssues,
 } from "../domain/product-input";
 import { INVENTORY_PATH } from "./inventory-search-params";
-import { useCreateProduct } from "./use-create-product";
+import { useSaveProduct } from "./use-save-product";
 
 const INPUT_CLASS =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none " +
@@ -35,16 +37,21 @@ const EMPTY: ProductFormValues = {
 interface ProductFormProps {
   /** The suppliers to choose from, loaded by the route on the server. */
   readonly suppliers: readonly SupplierName[];
+  /** The product to edit, as plain data; without one, the form creates a product. */
+  readonly product?: ProductProps;
 }
 
 /**
- * Creates a product. The rules come from the domain (productIssues), so the
- * form checks exactly what the entity and the API check. Selling below cost
- * is only a warning: the API allows it.
+ * Creates or edits a product. The rules come from the domain (productIssues),
+ * so the form checks exactly what the entity and the API check. Selling below
+ * cost is only a warning: the API allows it. An edit sends only the fields
+ * that changed.
  */
-export function ProductForm({ suppliers }: ProductFormProps) {
+export function ProductForm({ suppliers, product }: ProductFormProps) {
   const router = useRouter();
-  const create = useCreateProduct();
+  const save = useSaveProduct(product);
+  const isEdit = product !== undefined;
+  const cancelHref = isEdit ? `/productos/${product.id}` : INVENTORY_PATH;
   const ids = {
     name: useId(),
     description: useId(),
@@ -57,7 +64,9 @@ export function ProductForm({ suppliers }: ProductFormProps) {
     supplierId: useId(),
   } satisfies Record<ProductField, string>;
 
-  const [values, setValues] = useState<ProductFormValues>(EMPTY);
+  const [values, setValues] = useState<ProductFormValues>(() =>
+    product === undefined ? EMPTY : formValuesOf(new Product(product)),
+  );
   const [issues, setIssues] = useState<ProductIssues>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -84,7 +93,7 @@ export function ProductForm({ suppliers }: ProductFormProps) {
     if (hasIssues(found)) return;
 
     setIsSaving(true);
-    const result = await create(values);
+    const result = await save(values);
 
     if (!result.ok) {
       setIsSaving(false);
@@ -92,7 +101,7 @@ export function ProductForm({ suppliers }: ProductFormProps) {
       setFormError(result.message);
       return;
     }
-    // refresh() so the inventory, rendered on the server, includes the new product.
+    // refresh() so the pages rendered on the server show the saved product.
     router.push(`/productos/${result.productId}`);
     router.refresh();
   }
@@ -226,7 +235,7 @@ export function ProductForm({ suppliers }: ProductFormProps) {
 
       <div className="flex justify-end gap-2 pt-2">
         <Link
-          href={INVENTORY_PATH}
+          href={cancelHref}
           className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
         >
           Cancelar
@@ -236,7 +245,7 @@ export function ProductForm({ suppliers }: ProductFormProps) {
           disabled={isSaving}
           className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
-          {isSaving ? "Guardando…" : "Crear producto"}
+          {isSaving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear producto"}
         </button>
       </div>
     </form>
