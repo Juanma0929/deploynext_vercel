@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent } from "react";
 
 import { ROLE_LABELS, ROLES, isRole, type Role } from "@/shared/domain/role";
+import { Alert, Button, Checkbox, Field, Select, TextInput, describedBy } from "@/shared/presentation/ui";
 
 import type { User } from "../domain/user";
 import type { UserChanges } from "../domain/user-input";
@@ -11,11 +12,6 @@ import { useUsers } from "./use-users";
 import { createUserSchema, editUserSchema, type UserFormField } from "./user-schemas";
 
 type FieldErrors = Partial<Record<UserFormField, string>>;
-
-const INPUT_CLASS =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none " +
-  "focus:border-primary focus:ring-2 focus:ring-primary/20 read-only:bg-slate-100 " +
-  "read-only:text-muted disabled:bg-slate-100 aria-[invalid=true]:border-red-500";
 
 interface UserFormProps {
   /** The user to edit; without one, the form creates a new user. */
@@ -76,34 +72,32 @@ export function UserForm({ user, onDone, onCancel }: UserFormProps) {
     }
   }
 
+  const emailHint = isEdit ? "El correo no se puede cambiar." : undefined;
+  const passwordHint = isEdit ? "Déjala vacía para no cambiarla. Mínimo 8 caracteres." : "Mínimo 8 caracteres.";
+  const roleHint = isOwnAccount ? "No puedes cambiar tu propio rol." : undefined;
+
   return (
     <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
       {formError !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {formError}
-        </p>
+        <Alert tone="danger">
+          <p>{formError}</p>
+        </Alert>
       )}
 
       <Field id={ids.name} label="Nombre" error={errors.name}>
-        <input
+        <TextInput
           id={ids.name}
           name="name"
           autoComplete="off"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          aria-invalid={errors.name !== undefined}
-          aria-describedby={errors.name ? `${ids.name}-error` : undefined}
-          className={INPUT_CLASS}
+          invalid={errors.name !== undefined}
+          aria-describedby={describedBy(ids.name, { error: errors.name })}
         />
       </Field>
 
-      <Field
-        id={ids.email}
-        label="Correo"
-        error={errors.email}
-        hint={isEdit ? "El correo no se puede cambiar." : undefined}
-      >
-        <input
+      <Field id={ids.email} label="Correo" error={errors.email} hint={emailHint}>
+        <TextInput
           id={ids.email}
           name="email"
           type="email"
@@ -111,9 +105,9 @@ export function UserForm({ user, onDone, onCancel }: UserFormProps) {
           readOnly={isEdit}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          aria-invalid={errors.email !== undefined}
-          aria-describedby={`${ids.email}-hint ${errors.email ? `${ids.email}-error` : ""}`}
-          className={INPUT_CLASS}
+          invalid={errors.email !== undefined}
+          aria-describedby={describedBy(ids.email, { hint: emailHint, error: errors.email })}
+          className="read-only:text-muted"
         />
       </Field>
 
@@ -121,28 +115,22 @@ export function UserForm({ user, onDone, onCancel }: UserFormProps) {
         id={ids.password}
         label={isEdit ? "Nueva contraseña" : "Contraseña"}
         error={errors.password}
-        hint={isEdit ? "Déjala vacía para no cambiarla. Mínimo 8 caracteres." : "Mínimo 8 caracteres."}
+        hint={passwordHint}
       >
-        <input
+        <TextInput
           id={ids.password}
           name="password"
           type="password"
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          aria-invalid={errors.password !== undefined}
-          aria-describedby={`${ids.password}-hint ${errors.password ? `${ids.password}-error` : ""}`}
-          className={INPUT_CLASS}
+          invalid={errors.password !== undefined}
+          aria-describedby={describedBy(ids.password, { hint: passwordHint, error: errors.password })}
         />
       </Field>
 
-      <Field
-        id={ids.role}
-        label="Rol"
-        error={errors.role}
-        hint={isOwnAccount ? "No puedes cambiar tu propio rol." : undefined}
-      >
-        <select
+      <Field id={ids.role} label="Rol" error={errors.role} hint={roleHint}>
+        <Select
           id={ids.role}
           name="role"
           value={role}
@@ -150,30 +138,26 @@ export function UserForm({ user, onDone, onCancel }: UserFormProps) {
           onChange={(event) => {
             if (isRole(event.target.value)) setRole(event.target.value);
           }}
-          aria-describedby={`${ids.role}-hint`}
-          className={INPUT_CLASS}
+          aria-describedby={describedBy(ids.role, { hint: roleHint, error: errors.role })}
         >
           {ROLES.map((value) => (
             <option key={value} value={value}>
               {ROLE_LABELS[value]}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       {isEdit && (
         <div className="flex flex-col gap-1">
-          <label htmlFor={ids.active} className="flex items-center gap-2 text-sm font-medium">
-            <input
-              id={ids.active}
-              type="checkbox"
-              checked={isActive}
-              disabled={isOwnAccount}
-              onChange={(event) => setIsActive(event.target.checked)}
-              className="size-4"
-            />
-            Cuenta activa
-          </label>
+          <Checkbox
+            id={ids.active}
+            label="Cuenta activa"
+            checked={isActive}
+            disabled={isOwnAccount}
+            onChange={(event) => setIsActive(event.target.checked)}
+            className="font-medium"
+          />
           <p className="text-muted text-xs">
             {isOwnAccount
               ? "No puedes desactivar tu propia cuenta."
@@ -183,20 +167,12 @@ export function UserForm({ user, onDone, onCancel }: UserFormProps) {
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
-        >
+        <Button variant="secondary" onClick={onCancel}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {isSaving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear usuario"}
-        </button>
+        </Button>
+        <Button type="submit" isLoading={isSaving} loadingText="Guardando…">
+          {isEdit ? "Guardar cambios" : "Crear usuario"}
+        </Button>
       </div>
     </form>
   );
@@ -218,33 +194,4 @@ function changesFrom(user: User, values: FormValues): UserChanges {
     ...(values.role !== user.role ? { role: values.role } : {}),
     ...(values.isActive !== user.isActive ? { isActive: values.isActive } : {}),
   };
-}
-
-interface FieldProps {
-  readonly id: string;
-  readonly label: string;
-  readonly error: string | undefined;
-  readonly hint?: string | undefined;
-  readonly children: ReactNode;
-}
-
-function Field({ id, label, error, hint, children }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </label>
-      {children}
-      {hint !== undefined && (
-        <p id={`${id}-hint`} className="text-muted text-xs">
-          {hint}
-        </p>
-      )}
-      {error !== undefined && (
-        <p id={`${id}-error`} className="text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
-  );
 }

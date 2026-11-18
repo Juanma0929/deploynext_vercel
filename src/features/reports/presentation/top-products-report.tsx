@@ -4,6 +4,22 @@ import { useId, useState, type FormEvent } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
 import { Money } from "@/shared/domain/money";
+import {
+  Button,
+  EmptyState,
+  LoadingText,
+  MoneyText,
+  RetryAlert,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TextInput,
+  describedBy,
+  errorId,
+} from "@/shared/presentation/ui";
 
 import {
   assertTopProductsLimit,
@@ -11,6 +27,7 @@ import {
   TOP_PRODUCTS_LIMIT,
   type TopProduct,
 } from "../domain/reports";
+import { ReportSection } from "./report-section";
 import { TopProductsChart } from "./top-products-chart";
 import { useTopProducts } from "./use-top-products";
 
@@ -39,23 +56,17 @@ export function TopProductsReport() {
   }
 
   return (
-    <section aria-labelledby="top-products-title" className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 id="top-products-title" className="text-lg font-semibold">
-            Productos más vendidos
-          </h2>
-          <p className="text-muted text-sm">
-            Por unidades vendidas, con lo que dejó cada uno. Solo cuentan las ventas pagadas.
-          </p>
-        </div>
-
+    <ReportSection
+      titleId="top-products-title"
+      title="Productos más vendidos"
+      description="Por unidades vendidas, con lo que dejó cada uno. Solo cuentan las ventas pagadas."
+      actions={
         <form noValidate onSubmit={apply} className="flex items-end gap-2">
           <div className="flex flex-col gap-1">
-            <label htmlFor={limitId} className="text-xs font-medium">
+            <label htmlFor={limitId} className="text-sm font-medium">
               Cuántos productos ({TOP_PRODUCTS_LIMIT.min}–{TOP_PRODUCTS_LIMIT.max})
             </label>
-            <input
+            <TextInput
               id={limitId}
               type="number"
               inputMode="numeric"
@@ -64,50 +75,35 @@ export function TopProductsReport() {
               step={1}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              aria-invalid={limitError !== null}
-              aria-describedby={limitError !== null ? `${limitId}-error` : undefined}
-              className="focus:border-primary focus:ring-primary/20 w-24 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 aria-[invalid=true]:border-red-500"
+              invalid={limitError !== null}
+              aria-describedby={describedBy(limitId, { error: limitError })}
+              className="w-24"
             />
           </div>
-          <button type="submit" className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white">
-            Ver
-          </button>
+          <Button type="submit">Ver</Button>
         </form>
-      </header>
-
+      }
+    >
       {limitError !== null && (
-        <p id={`${limitId}-error`} role="alert" className="text-xs text-red-600">
+        <p id={errorId(limitId)} role="alert" className="text-xs text-red-600">
           {limitError}
         </p>
       )}
 
-      {report.status === "loading" && (
-        <p role="status" className="text-muted text-sm">
-          Cargando el reporte…
-        </p>
-      )}
+      {report.status === "loading" && <LoadingText>Cargando el reporte…</LoadingText>}
 
-      {report.status === "error" && (
-        <div role="alert" className="flex items-center gap-3 text-sm">
-          <p>{report.message}</p>
-          <button type="button" onClick={report.reload} className="font-medium underline">
-            Reintentar
-          </button>
-        </div>
-      )}
+      {report.status === "error" && <RetryAlert message={report.message} onRetry={report.reload} />}
 
       {report.status === "ready" &&
         (report.products.length === 0 ? (
-          <p className="text-muted rounded-md border border-dashed border-slate-300 p-6 text-center text-sm">
-            Todavía no hay ventas pagadas para armar el reporte.
-          </p>
+          <EmptyState>Todavía no hay ventas pagadas para armar el reporte.</EmptyState>
         ) : (
           <>
             <TopProductsChart products={report.products} />
             <TopProductsTable products={report.products} />
           </>
         ))}
-    </section>
+    </ReportSection>
   );
 }
 
@@ -120,49 +116,52 @@ function TopProductsTable({ products }: { readonly products: readonly TopProduct
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-muted text-xs">
-        Ingresos y ganancia por producto. La ganancia es lo vendido menos su costo.
-      </p>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-left text-sm">
-          <caption className="sr-only">Ingresos y ganancia de los productos más vendidos</caption>
-          <thead className="text-muted border-b border-slate-200 text-xs uppercase">
-            <tr>
-              <th scope="col" className="px-3 py-2 font-medium">#</th>
-              <th scope="col" className="px-3 py-2 font-medium">Producto</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">Unidades</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">Ingresos</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">Ganancia</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">Margen</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {products.map((product, index) => (
-              <tr key={product.productId}>
-                <td className="text-muted px-3 py-2 tabular-nums">{index + 1}</td>
-                <td className="px-3 py-2 font-medium">{product.name}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{product.quantitySold}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{product.revenue.format()}</td>
-                <td className={`px-3 py-2 text-right tabular-nums ${product.profit.isNegative() ? "text-red-700" : ""}`}>
-                  {product.profit.format()}
-                </td>
-                <td className="text-muted px-3 py-2 text-right tabular-nums">{formatMargin(profitMargin(product))}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot className="border-t border-slate-200 font-medium">
-            <tr>
-              <th scope="row" colSpan={2} className="px-3 py-2">
-                Total
-              </th>
-              <td className="px-3 py-2 text-right tabular-nums">{totals.quantitySold}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{totals.revenue.format()}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{totals.profit.format()}</td>
-              <td className="text-muted px-3 py-2 text-right tabular-nums">{formatMargin(profitMargin(totals))}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <p className="text-muted text-xs">Ingresos y ganancia por producto. La ganancia es lo vendido menos su costo.</p>
+      <Table caption="Ingresos y ganancia de los productos más vendidos">
+        <TableHead>
+          <TableHeaderCell>#</TableHeaderCell>
+          <TableHeaderCell>Producto</TableHeaderCell>
+          <TableHeaderCell align="right">Unidades</TableHeaderCell>
+          <TableHeaderCell align="right">Ingresos</TableHeaderCell>
+          <TableHeaderCell align="right">Ganancia</TableHeaderCell>
+          <TableHeaderCell align="right">Margen</TableHeaderCell>
+        </TableHead>
+        <TableBody>
+          {products.map((product, index) => (
+            <TableRow key={product.productId}>
+              <TableCell className="text-muted tabular-nums">{index + 1}</TableCell>
+              <TableCell className="font-medium">{product.name}</TableCell>
+              <TableCell align="right" className="tabular-nums">
+                {product.quantitySold}
+              </TableCell>
+              <TableCell align="right">
+                <MoneyText value={product.revenue} />
+              </TableCell>
+              <TableCell align="right">
+                <MoneyText value={product.profit} highlightNegative />
+              </TableCell>
+              <TableCell align="right" className="text-muted tabular-nums">
+                {formatMargin(profitMargin(product))}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        <tfoot className="border-t border-slate-200 font-medium">
+          <tr>
+            <th scope="row" colSpan={2} className="px-4 py-3">
+              Total
+            </th>
+            <td className="px-4 py-3 text-right tabular-nums">{totals.quantitySold}</td>
+            <td className="px-4 py-3 text-right">
+              <MoneyText value={totals.revenue} />
+            </td>
+            <td className="px-4 py-3 text-right">
+              <MoneyText value={totals.profit} highlightNegative />
+            </td>
+            <td className="text-muted px-4 py-3 text-right tabular-nums">{formatMargin(profitMargin(totals))}</td>
+          </tr>
+        </tfoot>
+      </Table>
     </div>
   );
 }

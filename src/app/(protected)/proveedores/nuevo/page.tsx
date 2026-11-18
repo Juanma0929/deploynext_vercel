@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { SupplierForm } from "@/features/suppliers/presentation";
+import { PageHeader } from "@/shared/presentation/ui";
 
 export const metadata: Metadata = {
   title: "Nuevo proveedor",
@@ -10,9 +11,7 @@ export const metadata: Metadata = {
 export default function NewSupplierPage() {
   return (
     <section aria-labelledby="new-supplier-title" className="flex flex-col gap-6">
-      <h1 id="new-supplier-title" className="text-2xl font-semibold">
-        Nuevo proveedor
-      </h1>
+      <PageHeader titleId="new-supplier-title" title="Nuevo proveedor" />
       <SupplierForm />
     </section>
   );

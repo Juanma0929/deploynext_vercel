@@ -14,10 +14,12 @@ export function LowStockAlert() {
   const count = useLowStockCount();
   if (count === null || count === 0) return null;
 
+  // An <aside> and not an Alert: it is a standing hint of the home page, not a
+  // message the screen reader should interrupt with.
   return (
     <aside
       aria-label="Alerta de stock bajo"
-      className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+      className="flex flex-wrap items-center gap-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900"
     >
       <span
         aria-hidden="true"

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { errorMessage } from "@/shared/domain/errors";
-import { Dialog } from "@/shared/presentation/dialog";
+import { Alert, Button, Modal, ModalActions } from "@/shared/presentation/ui";
 
 import { productsContainer } from "../di/container";
 import { ProductHasSalesError, ProductNotFoundError } from "../domain/errors";
@@ -83,15 +83,11 @@ export function DeleteProductButton({ product }: DeleteProductButtonProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-      >
+      <Button variant="danger-outline" onClick={open}>
         Eliminar
-      </button>
+      </Button>
 
-      <Dialog open={isOpen} title={title} onClose={() => setIsOpen(false)}>
+      <Modal open={isOpen} title={title} onClose={() => setIsOpen(false)}>
         <div className="flex flex-col gap-4 text-sm">
           {step.kind === "has-sales" ? (
             <div role="alert" className="flex flex-col gap-2">
@@ -117,43 +113,29 @@ export function DeleteProductButton({ product }: DeleteProductButtonProps) {
           )}
 
           {step.kind === "error" && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-red-700">
-              {step.message}
-            </p>
+            <Alert tone="danger">
+              <p>{step.message}</p>
+            </Alert>
           )}
 
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-100"
-            >
+          <ModalActions>
+            <Button variant="secondary" onClick={() => setIsOpen(false)}>
               {step.kind === "has-sales" ? "Cerrar" : "Cancelar"}
-            </button>
+            </Button>
             {step.kind === "has-sales" ? (
               product.isActive && (
-                <button
-                  type="button"
-                  onClick={deactivateInstead}
-                  disabled={isWorking}
-                  className="bg-primary rounded-md px-4 py-2 font-medium text-white disabled:opacity-60"
-                >
-                  {isWorking ? "Desactivando…" : "Desactivar en su lugar"}
-                </button>
+                <Button onClick={deactivateInstead} isLoading={isWorking} loadingText="Desactivando…">
+                  Desactivar en su lugar
+                </Button>
               )
             ) : (
-              <button
-                type="button"
-                onClick={remove}
-                disabled={isWorking}
-                className="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {isWorking ? "Eliminando…" : "Eliminar producto"}
-              </button>
+              <Button variant="danger" onClick={remove} isLoading={isWorking} loadingText="Eliminando…">
+                Eliminar producto
+              </Button>
             )}
-          </div>
+          </ModalActions>
         </div>
-      </Dialog>
+      </Modal>
     </>
   );
 }

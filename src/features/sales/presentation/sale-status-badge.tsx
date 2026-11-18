@@ -1,17 +1,21 @@
+import { Badge, type Tone } from "@/shared/presentation/ui";
+
 import type { SaleStatus } from "../domain/sale-status";
 import { SALE_STATUS_LABELS } from "./sale-status-labels";
 
-const TONES: Readonly<Record<SaleStatus, string>> = {
-  pending: "bg-amber-100 text-amber-900",
-  paid: "bg-emerald-100 text-emerald-900",
-  declined: "bg-red-100 text-red-900",
-  cancelled: "bg-slate-200 text-slate-700",
+/**
+ * One color per status, from the tones of the UI kit: pending waits (warning),
+ * paid is done (success), declined is a problem (danger), cancelled is over
+ * (neutral). Record<SaleStatus, …> makes a new status fail to compile until it
+ * gets its color.
+ */
+export const SALE_STATUS_TONES: Readonly<Record<SaleStatus, Tone>> = {
+  pending: "warning",
+  paid: "success",
+  declined: "danger",
+  cancelled: "neutral",
 };
 
 export function SaleStatusBadge({ status }: { readonly status: SaleStatus }) {
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONES[status]}`}>
-      {SALE_STATUS_LABELS[status]}
-    </span>
-  );
+  return <Badge tone={SALE_STATUS_TONES[status]}>{SALE_STATUS_LABELS[status]}</Badge>;
 }

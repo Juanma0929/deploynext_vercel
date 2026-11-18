@@ -10,6 +10,7 @@ import {
   type SaleDetail,
 } from "@/features/sales/di/server";
 import { SaleNotYours } from "@/features/sales/presentation";
+import { Alert, Breadcrumbs, MoneyText, PageHeader } from "@/shared/presentation/ui";
 
 export const metadata: Metadata = {
   title: "Cobrar venta",
@@ -45,39 +46,37 @@ export default async function ChargeSalePage({ params }: ChargeSalePageProps) {
   if (loaded.kind === "not-yours") return <SaleNotYours />;
 
   const { sale } = loaded.detail;
-  const total = sale.total.format();
 
   return (
     <section aria-labelledby="charge-title" className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="text-muted text-sm">
-        <Link href={`/ventas/${sale.id}`} className="hover:underline">
-          Venta
-        </Link>
-        <span aria-hidden="true"> / </span>
-        <span aria-current="page">Cobrar</span>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: "Ventas de hoy", href: "/ventas" },
+          { label: "Venta", href: `/ventas/${sale.id}` },
+          { label: "Cobrar" },
+        ]}
+      />
 
-      <header>
-        <h1 id="charge-title" className="text-2xl font-semibold">
-          Cobrar venta
-        </h1>
-        <p className="text-muted text-sm">
-          {sale.itemCount === 1 ? "1 producto" : `${sale.itemCount} productos`} · Total a cobrar{" "}
-          <strong className="text-foreground tabular-nums">{total}</strong>
-        </p>
-      </header>
+      <PageHeader
+        titleId="charge-title"
+        title="Cobrar venta"
+        description={
+          <>
+            {sale.itemCount === 1 ? "1 producto" : `${sale.itemCount} productos`} · Total a cobrar{" "}
+            <MoneyText value={sale.total} className="text-foreground font-semibold" />
+          </>
+        }
+      />
 
       {sale.isAwaitingPayment ? (
-        <ChargeSalePanel saleId={sale.id} totalLabel={total} />
+        <ChargeSalePanel saleId={sale.id} totalLabel={sale.total.format()} />
       ) : (
-        <div className="flex max-w-lg flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-          <p className="font-medium">
-            Esta venta ya no se puede cobrar: ya tiene un pago, o ya no está pendiente.
-          </p>
+        <Alert tone="warning" className="max-w-lg">
+          <p className="font-medium">Esta venta ya no se puede cobrar: ya tiene un pago, o ya no está pendiente.</p>
           <Link href={`/ventas/${sale.id}`} className="font-medium underline underline-offset-2">
             Ver el estado de la venta
           </Link>
-        </div>
+        </Alert>
       )}
     </section>
   );

@@ -5,7 +5,23 @@ import { useMemo, useState } from "react";
 
 import { BUSINESS_TIME_ZONE } from "@/shared/domain/calendar";
 import { paginate } from "@/shared/domain/collections";
-import { Pagination } from "@/shared/presentation/pagination";
+import {
+  Button,
+  ButtonLink,
+  EmptyState,
+  FilterChip,
+  LoadingText,
+  MoneyText,
+  PageHeader,
+  Pagination,
+  RetryAlert,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/shared/presentation/ui";
 
 import { countByStatus, filterSalesByStatus } from "../domain/sale-filters";
 import { SALE_STATUSES, type SaleStatus } from "../domain/sale-status";
@@ -52,40 +68,27 @@ export function TodaySalesScreen({ seesEverySeller }: TodaySalesScreenProps) {
 
   return (
     <section aria-labelledby="today-sales-title" className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 id="today-sales-title" className="text-2xl font-semibold">
-            Ventas de hoy
-          </h1>
-          <p className="text-muted text-sm">
-            {seesEverySeller
-              ? "Todas las ventas del negocio registradas hoy."
-              : "Las ventas que registraste hoy."}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={today.reload}
-            disabled={today.status === "loading"}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-60"
-          >
-            Actualizar
-          </button>
-          <Link
-            href="/ventas/nueva"
-            className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white"
-          >
-            Nueva venta
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        titleId="today-sales-title"
+        title="Ventas de hoy"
+        description={
+          seesEverySeller ? "Todas las ventas del negocio registradas hoy." : "Las ventas que registraste hoy."
+        }
+        actions={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={today.reload} disabled={today.status === "loading"}>
+              Actualizar
+            </Button>
+            <ButtonLink href="/ventas/nueva">Nueva venta</ButtonLink>
+          </div>
+        }
+      />
 
       <fieldset className="flex flex-wrap gap-2">
         <legend className="sr-only">Filtrar por estado</legend>
-        <StatusChip label="Todas" count={sales.length} isActive={status === null} onSelect={() => chooseStatus(null)} />
+        <FilterChip label="Todas" count={sales.length} isActive={status === null} onSelect={() => chooseStatus(null)} />
         {SALE_STATUSES.map((value) => (
-          <StatusChip
+          <FilterChip
             key={value}
             label={SALE_STATUS_PLURALS[value]}
             count={counts[value]}
@@ -95,93 +98,53 @@ export function TodaySalesScreen({ seesEverySeller }: TodaySalesScreenProps) {
         ))}
       </fieldset>
 
-      {today.status === "loading" && (
-        <p role="status" className="text-muted text-sm">
-          Cargando las ventas de hoy…
-        </p>
-      )}
+      {today.status === "loading" && <LoadingText>Cargando las ventas de hoy…</LoadingText>}
 
-      {today.status === "error" && (
-        <div role="alert" className="flex items-center gap-3 text-sm">
-          <p>{today.message}</p>
-          <button type="button" onClick={today.reload} className="font-medium underline">
-            Reintentar
-          </button>
-        </div>
-      )}
+      {today.status === "error" && <RetryAlert message={today.message} onRetry={today.reload} />}
 
       {today.status === "ready" && (
         <>
           {page.items.length === 0 ? (
-            <p className="text-muted rounded-md border border-dashed border-slate-300 p-6 text-center text-sm">
-              {sales.length === 0
-                ? "Todavía no hay ventas registradas hoy."
-                : "No hay ventas de hoy con ese estado."}
-            </p>
+            <EmptyState>
+              {sales.length === 0 ? "Todavía no hay ventas registradas hoy." : "No hay ventas de hoy con ese estado."}
+            </EmptyState>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-              <table className="w-full text-left text-sm">
-                <caption className="sr-only">Ventas de hoy</caption>
-                <thead className="text-muted border-b border-slate-200 text-xs uppercase">
-                  <tr>
-                    <th scope="col" className="px-4 py-3 font-medium">Hora</th>
-                    <th scope="col" className="px-4 py-3 text-right font-medium">Total</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Estado</th>
-                    <th scope="col" className="px-4 py-3 text-right font-medium">Ítems</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {page.items.map((sale) => (
-                    <tr key={sale.id}>
-                      <td className="px-4 py-3 tabular-nums">
-                        <Link href={`/ventas/${sale.id}`} className="text-primary font-medium hover:underline">
-                          {TIME_FORMAT.format(sale.createdAt)}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium tabular-nums">{sale.total.format()}</td>
-                      <td className="px-4 py-3">
-                        <SaleStatusBadge status={sale.status} />
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        {sale.itemCount}
-                        <span className="text-muted text-xs">
-                          {" "}
-                          ({sale.unitCount} {sale.unitCount === 1 ? "unidad" : "unidades"})
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table caption="Ventas de hoy">
+              <TableHead>
+                <TableHeaderCell>Hora</TableHeaderCell>
+                <TableHeaderCell align="right">Total</TableHeaderCell>
+                <TableHeaderCell>Estado</TableHeaderCell>
+                <TableHeaderCell align="right">Ítems</TableHeaderCell>
+              </TableHead>
+              <TableBody>
+                {page.items.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell className="tabular-nums">
+                      <Link href={`/ventas/${sale.id}`} className="text-primary font-medium hover:underline">
+                        {TIME_FORMAT.format(sale.createdAt)}
+                      </Link>
+                    </TableCell>
+                    <TableCell align="right" className="font-medium">
+                      <MoneyText value={sale.total} />
+                    </TableCell>
+                    <TableCell>
+                      <SaleStatusBadge status={sale.status} />
+                    </TableCell>
+                    <TableCell align="right" className="tabular-nums">
+                      {sale.itemCount}
+                      <span className="text-muted text-xs">
+                        {" "}
+                        ({sale.unitCount} {sale.unitCount === 1 ? "unidad" : "unidades"})
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
           <Pagination page={page} onPageChange={setPageNumber} noun="ventas" />
         </>
       )}
     </section>
-  );
-}
-
-interface StatusChipProps {
-  readonly label: string;
-  readonly count: number;
-  readonly isActive: boolean;
-  readonly onSelect: () => void;
-}
-
-function StatusChip({ label, count, isActive, onSelect }: StatusChipProps) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={isActive}
-      className={`rounded-full border px-3 py-1 text-sm ${
-        isActive
-          ? "border-primary bg-primary/10 text-primary font-medium"
-          : "border-slate-300 bg-white hover:bg-slate-100"
-      }`}
-    >
-      {label} <span className="tabular-nums">({count})</span>
-    </button>
   );
 }

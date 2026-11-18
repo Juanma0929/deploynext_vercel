@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { Can } from "@/features/auth/presentation";
 import { listInventory } from "@/features/products/di/server";
@@ -10,6 +9,7 @@ import {
   parseInventoryQuery,
   type SearchParams,
 } from "@/features/products/presentation";
+import { ButtonLink } from "@/shared/presentation/ui";
 
 export const metadata: Metadata = {
   title: "Productos",
@@ -37,12 +37,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       deletedName={typeof deleted === "string" ? deleted : undefined}
       actions={
         <Can permission="products:write">
-          <Link
-            href="/productos/nuevo"
-            className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white"
-          >
-            Nuevo producto
-          </Link>
+          <ButtonLink href="/productos/nuevo">Nuevo producto</ButtonLink>
         </Can>
       }
     />

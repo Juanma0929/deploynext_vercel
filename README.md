@@ -49,9 +49,31 @@ src/
     domain/                     errores, Money, DateRange, paginate() y filter()
     infrastructure/http/        el único cliente HTTP de la API (Bearer, 401, ApiRequestError)
     infrastructure/config/      lectura de las variables de entorno
-    presentation/               componentes de UI reutilizables
+    presentation/ui/            el kit de UI tipado (ver abajo)
     di/                         la instancia del cliente HTTP
 ```
+
+### Layout y kit de UI
+
+El área privada (`AppShell`) tiene un **sidebar fijo en escritorio** y, en móvil, una barra con un botón
+**Menú** que abre un **drawer** (sobre `<dialog>`: atrapa el foco, cierra con Escape, con el fondo o al
+elegir una opción). El menú se filtra con la matriz de permisos del rol y resalta la página actual.
+
+Todas las pantallas usan los componentes de `src/shared/presentation/ui`, importados desde
+`@/shared/presentation/ui`, en vez de repetir clases de Tailwind:
+
+| Componente | Para qué |
+| --- | --- |
+| `Button`, `ButtonLink`, `FilterChip` | Acciones (`primary`, `secondary`, `danger`, `danger-outline`, `link`) y filtros en píldora |
+| `Field`, `TextInput`, `Select`, `Textarea`, `Checkbox` | Formularios: etiqueta, `*`/`(opcional)`, ayuda y error con `aria-describedby` (`describedBy()`) |
+| `Table` y sus celdas, `EmptyState`, `MissingValue` | Tablas que se desplazan en pantallas angostas |
+| `Pagination`, `LinkPagination` | Paginación en estado del cliente o en la URL |
+| `Modal`, `ModalActions` | Confirmaciones (nunca `window.confirm`) |
+| `Toast` (`ToastProvider`, `useToast`) | Avisos breves de una acción: "Stock guardado", 403 |
+| `Alert`, `RetryAlert`, `LoadingText` | Mensajes que se quedan en pantalla, errores con "Reintentar" |
+| `Badge` | Estados con un color por significado; `SaleStatusBadge` da uno por `SaleStatus` |
+| `MoneyText` | Un `Money` en formato es-CO, con dígitos alineados y opción de rojo si es negativo |
+| `PageHeader`, `Breadcrumbs`, `Panel`, `Stat`, `StatusPage` | La estructura de cada pantalla, y las de 403, 404 y error |
 
 Features: `auth`, `users`, `suppliers`, `products`, `sales`, `payments`, `reports`. Las capas y las
 reglas entre ellas están en [`src/features/README.md`](src/features/README.md).

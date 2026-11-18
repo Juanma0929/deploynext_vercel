@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent } from "react";
+
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Field,
+  Select,
+  TextInput,
+  Textarea,
+  describedBy,
+} from "@/shared/presentation/ui";
 
 import { Product, type ProductProps } from "../domain/product";
 import type { SupplierName } from "../domain/product.repository";
@@ -17,10 +28,6 @@ import {
 } from "../domain/product-input";
 import { INVENTORY_PATH } from "./inventory-search-params";
 import { useSaveProduct } from "./use-save-product";
-
-const INPUT_CLASS =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none " +
-  "focus:border-primary focus:ring-2 focus:ring-primary/20 aria-[invalid=true]:border-red-500";
 
 const EMPTY: ProductFormValues = {
   name: "",
@@ -39,6 +46,12 @@ interface ProductFormProps {
   readonly suppliers: readonly SupplierName[];
   /** The product to edit, as plain data; without one, the form creates a product. */
   readonly product?: ProductProps;
+}
+
+interface TextOptions {
+  readonly required?: boolean;
+  readonly numeric?: boolean;
+  readonly hint?: string;
 }
 
 /**
@@ -106,11 +119,6 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
     router.refresh();
   }
 
-  function describedBy(field: ProductField, hint: boolean): string | undefined {
-    const id = ids[field];
-    return [hint ? `${id}-hint` : "", issues[field] ? `${id}-error` : ""].filter(Boolean).join(" ") || undefined;
-  }
-
   function text(field: ProductField, label: string, options: TextOptions = {}) {
     const id = ids[field];
     return (
@@ -120,8 +128,9 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
         error={issues[field]}
         hint={options.hint}
         required={options.required ?? false}
+        optional={!(options.required ?? false)}
       >
-        <input
+        <TextInput
           id={id}
           name={field}
           type="text"
@@ -129,10 +138,9 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
           autoComplete="off"
           value={values[field]}
           onChange={(event) => set(field, event.target.value)}
-          aria-invalid={issues[field] !== undefined}
-          aria-describedby={describedBy(field, options.hint !== undefined)}
+          invalid={issues[field] !== undefined}
+          aria-describedby={describedBy(id, { hint: options.hint, error: issues[field] })}
           aria-required={options.required}
-          className={INPUT_CLASS}
         />
       </Field>
     );
@@ -140,40 +148,35 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
 
   if (suppliers.length === 0) {
     return (
-      <p className="max-w-xl rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Para crear un producto primero tiene que existir su proveedor.{" "}
-        <Link href="/proveedores/nuevo" className="font-medium underline">
-          Crea un proveedor
-        </Link>
-        .
-      </p>
+      <Alert tone="warning" className="max-w-xl">
+        <p>
+          Para crear un producto primero tiene que existir su proveedor.{" "}
+          <Link href="/proveedores/nuevo" className="font-medium underline">
+            Crea un proveedor
+          </Link>
+          .
+        </p>
+      </Alert>
     );
   }
 
   return (
     <form noValidate onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-4">
       {formError !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {formError}
-        </p>
+        <Alert tone="danger">
+          <p>{formError}</p>
+        </Alert>
       )}
 
       {text("name", "Nombre", { required: true })}
 
-      <Field
-        id={ids.description}
-        label="Descripción"
-        error={issues.description}
-        hint={undefined}
-        required={false}
-      >
-        <textarea
+      <Field id={ids.description} label="Descripción" optional>
+        <Textarea
           id={ids.description}
           name="description"
           rows={2}
           value={values.description}
           onChange={(event) => set("description", event.target.value)}
-          className={INPUT_CLASS}
         />
       </Field>
 
@@ -182,22 +185,15 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
         {text("barcode", "Código de barras", { hint: "Si lo dejas vacío, no se guarda." })}
       </div>
 
-      <Field
-        id={ids.supplierId}
-        label="Proveedor"
-        error={issues.supplierId}
-        hint={undefined}
-        required
-      >
-        <select
+      <Field id={ids.supplierId} label="Proveedor" error={issues.supplierId} required>
+        <Select
           id={ids.supplierId}
           name="supplierId"
           value={values.supplierId}
           onChange={(event) => set("supplierId", event.target.value)}
-          aria-invalid={issues.supplierId !== undefined}
-          aria-describedby={describedBy("supplierId", false)}
+          invalid={issues.supplierId !== undefined}
+          aria-describedby={describedBy(ids.supplierId, { error: issues.supplierId })}
           aria-required
-          className={INPUT_CLASS}
         >
           <option value="">Elige un proveedor</option>
           {suppliers.map((supplier) => (
@@ -205,7 +201,7 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
               {supplier.name}
             </option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <fieldset className="grid gap-4 sm:grid-cols-2">
@@ -213,13 +209,12 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
         {text("purchasePrice", "Precio de compra", { required: true, numeric: true })}
         {text("salePrice", "Precio de venta", { required: true, numeric: true })}
         {belowCost && (
-          <p
-            role="status"
-            className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 sm:col-span-2"
-          >
-            El precio de venta es menor que el de compra: cada unidad se vendería con pérdida. Puedes
-            guardarlo igual, por ejemplo para una liquidación.
-          </p>
+          <Alert tone="warning" role="status" className="sm:col-span-2">
+            <p>
+              El precio de venta es menor que el de compra: cada unidad se vendería con pérdida. Puedes
+              guardarlo igual, por ejemplo para una liquidación.
+            </p>
+          </Alert>
         )}
       </fieldset>
 
@@ -234,61 +229,13 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
       </fieldset>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Link
-          href={cancelHref}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
-        >
+        <ButtonLink href={cancelHref} variant="secondary">
           Cancelar
-        </Link>
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {isSaving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear producto"}
-        </button>
+        </ButtonLink>
+        <Button type="submit" isLoading={isSaving} loadingText="Guardando…">
+          {isEdit ? "Guardar cambios" : "Crear producto"}
+        </Button>
       </div>
     </form>
-  );
-}
-
-interface TextOptions {
-  readonly required?: boolean;
-  readonly numeric?: boolean;
-  readonly hint?: string;
-}
-
-interface FieldProps {
-  readonly id: string;
-  readonly label: string;
-  readonly error: string | undefined;
-  readonly hint: string | undefined;
-  readonly required: boolean;
-  readonly children: ReactNode;
-}
-
-function Field({ id, label, error, hint, required, children }: FieldProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-        {required ? (
-          <span className="text-red-600" aria-hidden="true"> *</span>
-        ) : (
-          <span className="text-muted font-normal"> (opcional)</span>
-        )}
-      </label>
-      {children}
-      {hint !== undefined && (
-        <p id={`${id}-hint`} className="text-muted text-xs">
-          {hint}
-        </p>
-      )}
-      {error !== undefined && (
-        <p id={`${id}-error`} className="text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   type ProductDetail,
 } from "@/features/products/di/server";
 import { ProductForm } from "@/features/products/presentation";
+import { PageHeader } from "@/shared/presentation/ui";
 
 interface EditProductPageProps {
   readonly params: Promise<{ readonly id: string }>;
@@ -43,9 +44,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
 
   return (
     <section aria-labelledby="edit-product-title" className="flex flex-col gap-6">
-      <h1 id="edit-product-title" className="text-2xl font-semibold">
-        Editar producto
-      </h1>
+      <PageHeader titleId="edit-product-title" title="Editar producto" />
       {/* Plain data: the form is a Client Component. */}
       <ProductForm suppliers={suppliers} product={product.toProps()} />
     </section>

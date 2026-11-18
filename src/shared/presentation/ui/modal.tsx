@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
-interface DialogProps {
+interface ModalProps {
   readonly open: boolean;
   readonly title: string;
   readonly onClose: () => void;
@@ -11,9 +11,10 @@ interface DialogProps {
 
 /**
  * A modal on top of the native <dialog>: it traps the focus, closes with
- * Escape and gives the focus back to the element that opened it.
+ * Escape and gives the focus back to the element that opened it. Never
+ * window.confirm(): every confirmation of the app is one of these.
  */
-export function Dialog({ open, title, onClose, children }: DialogProps) {
+export function Modal({ open, title, onClose, children }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -42,4 +43,9 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
       )}
     </dialog>
   );
+}
+
+/** The row of buttons at the bottom of a modal, aligned to the right. */
+export function ModalActions({ children }: { readonly children: ReactNode }) {
+  return <div className="flex flex-wrap justify-end gap-2">{children}</div>;
 }

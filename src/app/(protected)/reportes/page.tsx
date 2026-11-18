@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LowStockReport, SalesPeriodReport, TopProductsReport } from "@/features/reports/presentation";
+import { PageHeader } from "@/shared/presentation/ui";
 
 export const metadata: Metadata = {
   title: "Reportes",
@@ -10,12 +11,7 @@ export const metadata: Metadata = {
 export default function ReportsPage() {
   return (
     <section aria-labelledby="reports-title" className="flex flex-col gap-6">
-      <header>
-        <h1 id="reports-title" className="text-2xl font-semibold">
-          Reportes
-        </h1>
-        <p className="text-muted text-sm">Solo cuentan las ventas pagadas.</p>
-      </header>
+      <PageHeader titleId="reports-title" title="Reportes" description="Solo cuentan las ventas pagadas." />
       <SalesPeriodReport />
       <TopProductsReport />
       <LowStockReport />

@@ -1,7 +1,17 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { BUSINESS_TIME_ZONE } from "@/shared/domain/calendar";
+import {
+  Breadcrumbs,
+  DataItem,
+  MoneyText,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/shared/presentation/ui";
 
 import type { SaleDetail } from "../application/get-sale-detail.use-case";
 import { paymentMethodLabel } from "./payment-method-labels";
@@ -26,11 +36,7 @@ export function SaleDetailView({ detail, actions }: SaleDetailViewProps) {
 
   return (
     <article aria-labelledby="sale-title" className="flex flex-col gap-6">
-      <nav aria-label="Ruta de navegación" className="text-sm">
-        <Link href="/ventas" className="text-primary hover:underline">
-          ← Ventas de hoy
-        </Link>
-      </nav>
+      <Breadcrumbs items={[{ label: "Ventas de hoy", href: "/ventas" }, { label: "Venta" }]} />
 
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
@@ -48,16 +54,16 @@ export function SaleDetailView({ detail, actions }: SaleDetailViewProps) {
       </header>
 
       <dl className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm sm:grid-cols-3">
-        <Item label="Total">
-          <span className="text-lg font-semibold tabular-nums">{sale.total.format()}</span>
-        </Item>
+        <DataItem label="Total">
+          <MoneyText value={sale.total} className="text-lg font-semibold" />
+        </DataItem>
         {sale.paymentMethod !== null && (
-          <Item label="Método de pago">{paymentMethodLabel(sale.paymentMethod)}</Item>
+          <DataItem label="Método de pago">{paymentMethodLabel(sale.paymentMethod)}</DataItem>
         )}
         {sale.paymentTransactionId !== null && (
-          <Item label="Transacción">
+          <DataItem label="Transacción">
             <span className="font-mono text-xs break-all">{sale.paymentTransactionId}</span>
-          </Item>
+          </DataItem>
         )}
       </dl>
 
@@ -65,53 +71,46 @@ export function SaleDetailView({ detail, actions }: SaleDetailViewProps) {
         <h2 id="sale-items-title" className="text-lg font-semibold">
           Productos
         </h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="text-muted border-b border-slate-200 text-xs uppercase">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Producto</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Cantidad</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Precio unitario</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sale.lines.map((line) => (
-                <tr key={line.productId}>
-                  <td className="px-4 py-3 font-medium">
-                    {productNames.get(line.productId) ?? (
-                      <span className="text-muted font-normal">Producto no disponible</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{line.quantity}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{line.unitPrice.format()}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{line.subtotal.format()}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="border-t border-slate-200">
-              <tr>
-                <th scope="row" colSpan={3} className="px-4 py-3 text-right font-medium">
-                  Total
-                </th>
-                <td className="px-4 py-3 text-right font-semibold tabular-nums">{sale.total.format()}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <p className="text-muted text-xs">
-          Los precios son los que tenía cada producto al momento de la venta.
-        </p>
+        <Table caption="Productos de la venta">
+          <TableHead>
+            <TableHeaderCell>Producto</TableHeaderCell>
+            <TableHeaderCell align="right">Cantidad</TableHeaderCell>
+            <TableHeaderCell align="right">Precio unitario</TableHeaderCell>
+            <TableHeaderCell align="right">Subtotal</TableHeaderCell>
+          </TableHead>
+          <TableBody>
+            {sale.lines.map((line) => (
+              <TableRow key={line.productId}>
+                <TableCell className="font-medium">
+                  {productNames.get(line.productId) ?? (
+                    <span className="text-muted font-normal">Producto no disponible</span>
+                  )}
+                </TableCell>
+                <TableCell align="right" className="tabular-nums">
+                  {line.quantity}
+                </TableCell>
+                <TableCell align="right">
+                  <MoneyText value={line.unitPrice} />
+                </TableCell>
+                <TableCell align="right">
+                  <MoneyText value={line.subtotal} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <tfoot className="border-t border-slate-200">
+            <tr>
+              <th scope="row" colSpan={3} className="px-4 py-3 text-right font-medium">
+                Total
+              </th>
+              <td className="px-4 py-3 text-right font-semibold">
+                <MoneyText value={sale.total} />
+              </td>
+            </tr>
+          </tfoot>
+        </Table>
+        <p className="text-muted text-xs">Los precios son los que tenía cada producto al momento de la venta.</p>
       </section>
     </article>
-  );
-}
-
-function Item({ label, children }: { readonly label: string; readonly children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-muted text-xs">{label}</dt>
-      <dd>{children}</dd>
-    </div>
   );
 }

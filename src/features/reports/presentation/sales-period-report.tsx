@@ -5,6 +5,24 @@ import { useId, useState, type FormEvent } from "react";
 import { lastDays, monthToDate, todayInColombia } from "@/shared/domain/calendar";
 import { DateRange } from "@/shared/domain/date-range";
 import { errorMessage } from "@/shared/domain/errors";
+import {
+  Button,
+  EmptyState,
+  Field,
+  FilterChip,
+  LoadingText,
+  MoneyText,
+  RetryAlert,
+  Stat,
+  StatGrid,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TextInput,
+} from "@/shared/presentation/ui";
 
 import type { SalesReport } from "../domain/reports";
 import { longDay, shortDay } from "./day-format";
@@ -83,39 +101,21 @@ export function SalesPeriodReport() {
           <fieldset className="flex gap-2">
             <legend className="sr-only">Periodo</legend>
             {PRESETS.map((option) => (
-              <button
+              <FilterChip
                 key={option.id}
-                type="button"
-                aria-pressed={preset === option.id}
-                onClick={() => choosePreset(option.id)}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  preset === option.id
-                    ? "border-primary bg-primary/10 text-primary font-medium"
-                    : "border-slate-300 bg-white hover:bg-slate-100"
-                }`}
-              >
-                {option.label}
-              </button>
+                label={option.label}
+                isActive={preset === option.id}
+                onSelect={() => choosePreset(option.id)}
+              />
             ))}
           </fieldset>
           <CustomRangeForm range={range} isActive={preset === "custom"} onApply={applyCustom} />
         </div>
       </header>
 
-      {sales.status === "loading" && (
-        <p role="status" className="text-muted text-sm">
-          Cargando el reporte…
-        </p>
-      )}
+      {sales.status === "loading" && <LoadingText>Cargando el reporte…</LoadingText>}
 
-      {sales.status === "error" && (
-        <div role="alert" className="flex items-center gap-3 text-sm">
-          <p>{sales.message}</p>
-          <button type="button" onClick={sales.reload} className="font-medium underline">
-            Reintentar
-          </button>
-        </div>
-      )}
+      {sales.status === "error" && <RetryAlert message={sales.message} onRetry={sales.reload} />}
 
       {sales.status === "ready" && <ReportBody report={sales.report} />}
     </section>
@@ -127,49 +127,47 @@ function ReportBody({ report }: { readonly report: SalesReport }) {
 
   return (
     <>
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Ventas pagadas" value={String(report.salesCount)} />
-        <Stat label="Ingresos" value={report.revenue.format()} />
+      <StatGrid>
+        <Stat label="Ventas pagadas" value={report.salesCount} />
+        <Stat label="Ingresos" value={<MoneyText value={report.revenue} />} />
         <Stat
           label="Ganancia"
-          value={report.profit.format()}
-          detail={margin === null ? undefined : `${PERCENT.format(margin)} % de los ingresos`}
-          isNegative={report.profit.isNegative()}
+          value={<MoneyText value={report.profit} highlightNegative />}
+          {...(margin === null ? {} : { hint: `${PERCENT.format(margin)} % de los ingresos` })}
         />
-      </dl>
+      </StatGrid>
 
       {report.salesCount === 0 ? (
-        <p className="text-muted rounded-md border border-dashed border-slate-300 p-6 text-center text-sm">
-          No hubo ventas pagadas en este periodo.
-        </p>
+        <EmptyState>No hubo ventas pagadas en este periodo.</EmptyState>
       ) : (
         <>
           <SalesPeriodChart days={report.byDay} />
           <details className="text-sm">
             <summary className="text-primary cursor-pointer font-medium">Ver los datos día por día</summary>
-            <div className="mt-2 overflow-x-auto">
-              <table className="w-full min-w-[28rem] text-left">
-                <caption className="sr-only">Ventas pagadas por día</caption>
-                <thead className="text-muted border-b border-slate-200 text-xs uppercase">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 font-medium">Día</th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">Ventas</th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">Ingresos</th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">Ganancia</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {report.byDay.map((day) => (
-                    <tr key={day.date} className={day.salesCount === 0 ? "text-muted" : undefined}>
-                      <td className="px-3 py-2">{shortDay(day.date)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{day.salesCount}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{day.revenue.format()}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{day.profit.format()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table caption="Ventas pagadas por día" className="mt-2">
+              <TableHead>
+                <TableHeaderCell>Día</TableHeaderCell>
+                <TableHeaderCell align="right">Ventas</TableHeaderCell>
+                <TableHeaderCell align="right">Ingresos</TableHeaderCell>
+                <TableHeaderCell align="right">Ganancia</TableHeaderCell>
+              </TableHead>
+              <TableBody>
+                {report.byDay.map((day) => (
+                  <TableRow key={day.date} className={day.salesCount === 0 ? "text-muted" : undefined}>
+                    <TableCell>{shortDay(day.date)}</TableCell>
+                    <TableCell align="right" className="tabular-nums">
+                      {day.salesCount}
+                    </TableCell>
+                    <TableCell align="right">
+                      <MoneyText value={day.revenue} />
+                    </TableCell>
+                    <TableCell align="right">
+                      <MoneyText value={day.profit} highlightNegative />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </details>
         </>
       )}
@@ -209,44 +207,37 @@ function CustomRangeForm({ range, isActive, onApply }: CustomRangeFormProps) {
     }
   }
 
-  const control =
-    "rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 aria-[invalid=true]:border-red-500";
+  const errorDescribedBy = error !== null ? ids.error : undefined;
 
   return (
     <form noValidate onSubmit={submit} className="flex flex-col gap-1">
       <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-col gap-1">
-          <label htmlFor={ids.from} className="text-xs font-medium">Desde</label>
-          <input
+        <Field id={ids.from} label="Desde">
+          <TextInput
             id={ids.from}
             type="date"
             value={from}
             onChange={(event) => setFrom(event.target.value)}
-            aria-invalid={error !== null}
-            aria-describedby={error !== null ? ids.error : undefined}
-            className={control}
+            invalid={error !== null}
+            aria-describedby={errorDescribedBy}
+            className="py-1.5"
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor={ids.to} className="text-xs font-medium">Hasta</label>
-          <input
+        </Field>
+        <Field id={ids.to} label="Hasta">
+          <TextInput
             id={ids.to}
             type="date"
             value={to}
             onChange={(event) => setTo(event.target.value)}
-            aria-invalid={error !== null}
-            aria-describedby={error !== null ? ids.error : undefined}
-            className={control}
+            invalid={error !== null}
+            aria-describedby={errorDescribedBy}
+            className="py-1.5"
           />
-        </div>
-        <button
-          type="submit"
-          className={`rounded-md px-4 py-1.5 text-sm font-medium ${
-            isActive ? "bg-primary text-white" : "border border-slate-300 bg-white hover:bg-slate-100"
-          }`}
-        >
+        </Field>
+        {/* Solid while the custom range is the one on screen. */}
+        <Button type="submit" variant={isActive ? "primary" : "secondary"} className="py-1.5">
           Aplicar rango
-        </button>
+        </Button>
       </div>
       {error !== null && (
         <p id={ids.error} role="alert" className="text-xs text-red-600">
@@ -254,22 +245,5 @@ function CustomRangeForm({ range, isActive, onApply }: CustomRangeFormProps) {
         </p>
       )}
     </form>
-  );
-}
-
-interface StatProps {
-  readonly label: string;
-  readonly value: string;
-  readonly detail?: string | undefined;
-  readonly isNegative?: boolean;
-}
-
-function Stat({ label, value, detail, isNegative = false }: StatProps) {
-  return (
-    <div className="rounded-lg border border-slate-200 p-4">
-      <dt className="text-muted text-xs">{label}</dt>
-      <dd className={`mt-1 text-2xl font-semibold tabular-nums ${isNegative ? "text-red-700" : ""}`}>{value}</dd>
-      {detail !== undefined && <dd className="text-muted text-xs">{detail}</dd>}
-    </div>
   );
 }
