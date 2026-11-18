@@ -32,3 +32,25 @@ export function lastDays(today: string, days: number): DateRange {
   }
   return DateRange.create(addDays(today, -(days - 1)), today);
 }
+
+/**
+ * The day in Colombia (YYYY-MM-DD) an instant falls on. A sale at 21:00 on
+ * Monday in Colombia is already Tuesday in UTC; this says Monday.
+ */
+export function dayInColombia(instant: Date): string {
+  return ISO_DAY_FORMAT.format(instant);
+}
+
+const HAS_TIME_ZONE = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+/**
+ * Reads a timestamp the API sends in UTC. ISO strings with a zone are read
+ * as they are; one without a zone is taken as UTC, because new Date() would
+ * read it as the local time of the browser.
+ */
+export function parseUtcTimestamp(value: string): Date {
+  const text = value.trim();
+  const date = new Date(HAS_TIME_ZONE.test(text) ? text : `${text.replace(" ", "T")}Z`);
+  if (Number.isNaN(date.getTime())) throw new DomainError("La fecha recibida no es válida.");
+  return date;
+}

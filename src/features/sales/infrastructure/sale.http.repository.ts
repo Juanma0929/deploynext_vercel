@@ -14,6 +14,11 @@ export class SaleHttpRepository implements SaleRepository {
     return dtos.map(toSale);
   }
 
+  async findAll(): Promise<Sale[]> {
+    const dtos = await this.http.get<SaleDto[]>("/sales");
+    return dtos.map(toSale);
+  }
+
   async create(items: readonly SaleItem[]): Promise<Sale> {
     try {
       return toSale(await this.http.post<SaleDto>("/sales", toCreateSaleDto(items)));

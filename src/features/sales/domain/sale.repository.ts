@@ -9,6 +9,9 @@ export interface SaleRepository {
    */
   findToday(): Promise<Sale[]>;
 
+  /** Every sale of the business, newest first. Admin only. */
+  findAll(): Promise<Sale[]>;
+
   /**
    * Registers a pending sale and decreases the stock. Rejects with
    * SaleRejectedError when a product is inactive, short of stock or gone.
