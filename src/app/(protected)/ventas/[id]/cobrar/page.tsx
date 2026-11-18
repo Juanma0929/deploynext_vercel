@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { NequiPaymentForm } from "@/features/payments/presentation";
+import { ChargeSalePanel } from "@/features/payments/presentation";
 import {
   getSaleDetail,
   SaleNotFoundError,
@@ -68,12 +68,7 @@ export default async function ChargeSalePage({ params }: ChargeSalePageProps) {
       </header>
 
       {sale.isAwaitingPayment ? (
-        <section aria-labelledby="nequi-title" className="flex flex-col gap-4">
-          <h2 id="nequi-title" className="font-semibold">
-            Pagar con Nequi
-          </h2>
-          <NequiPaymentForm saleId={sale.id} totalLabel={total} />
-        </section>
+        <ChargeSalePanel saleId={sale.id} totalLabel={total} />
       ) : (
         <div className="flex max-w-lg flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
           <p className="font-medium">

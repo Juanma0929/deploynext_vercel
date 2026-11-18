@@ -1,1 +1,1 @@
-export { NequiPaymentForm } from "./nequi-payment-form";
+export { ChargeSalePanel } from "./charge-sale-panel";
