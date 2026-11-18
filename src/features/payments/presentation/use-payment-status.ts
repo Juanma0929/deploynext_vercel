@@ -7,7 +7,7 @@ import { notifyDataChanged } from "@/shared/presentation/data-changes";
 
 import { paymentsContainer } from "../di/container";
 import { NoPaymentToCheckError, PaymentGatewayError } from "../domain/errors";
-import { isFinalStatus, PAYMENT_POLLING, type SalePaymentStatus } from "../domain/payment-status";
+import { isFinalStatus, type SalePaymentStatus } from "../domain/payment-status";
 import { paymentStatuses, rememberPaymentStatus } from "./payments-store";
 
 export type PaymentStatusState =
@@ -31,10 +31,11 @@ export interface PaymentStatusOptions {
 }
 
 /**
- * The polling of a payment: GET /sales/:id/payment/status every 2.5 seconds
- * while the sale is pending, for at most a minute. It stops as soon as the
- * status is final, on any error, after the minute, and when the component
- * unmounts (the pending timer is cleared and a late answer is ignored).
+ * The polling of a payment, run by PollPaymentStatusUseCase: GET
+ * /sales/:id/payment/status every 2.5 seconds while the sale is pending, for
+ * at most a minute. It stops as soon as the status is final, on any error,
+ * after the minute, and when the component unmounts (the pending wait is
+ * cleared and a late answer is ignored).
  * retry() starts a new minute.
  *
  * A sale that is already final when the hook mounts is shown as it is,
@@ -63,33 +64,25 @@ export function usePaymentStatus(
   useEffect(() => {
     if (round === 0) return;
 
-    let isActive = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const startedAt = Date.now();
-    const { checkPaymentStatus } = paymentsContainer();
+    // Leaving the screen aborts: the pending wait is cleared and a late answer is ignored.
+    const controller = new AbortController();
 
-    async function check() {
-      try {
-        const { status } = await checkPaymentStatus.execute(saleId);
-        if (!isActive) return;
-
-        if (isFinalStatus(status)) {
-          setState(stateOf(status));
-          rememberPaymentStatus(saleId, status);
-          // Approved or declined: the sale changed, and a declined one gave its stock back.
-          notifyDataChanged("sales", "products");
-          onSettled.current?.(status);
-          return;
-        }
-        // One more check would end after the minute: stop and let the user decide.
-        if (Date.now() - startedAt + PAYMENT_POLLING.intervalMs > PAYMENT_POLLING.maxDurationMs) {
+    paymentsContainer()
+      .pollPaymentStatus.execute(saleId, controller.signal)
+      .then((outcome) => {
+        if (outcome.kind === "aborted" || controller.signal.aborted) return;
+        if (outcome.kind === "timeout") {
           setState({ phase: "timeout" });
           return;
         }
-        // The next check is scheduled only after this one answered, so they never overlap.
-        timer = setTimeout(() => void check(), PAYMENT_POLLING.intervalMs);
-      } catch (error: unknown) {
-        if (!isActive) return;
+        setState(stateOf(outcome.status));
+        rememberPaymentStatus(saleId, outcome.status);
+        // Approved or declined: the sale changed, and a declined one gave its stock back.
+        notifyDataChanged("sales", "products");
+        onSettled.current?.(outcome.status);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
         setState(
           error instanceof PaymentGatewayError
             ? { phase: "gateway-error", message: error.message }
@@ -97,15 +90,9 @@ export function usePaymentStatus(
               ? { phase: "no-payment", message: error.message }
               : { phase: "error", message: errorMessage(error) },
         );
-      }
-    }
+      });
 
-    void check();
-
-    return () => {
-      isActive = false;
-      if (timer !== undefined) clearTimeout(timer);
-    };
+    return () => controller.abort();
   }, [round, saleId]);
 
   const retry = useCallback(() => {

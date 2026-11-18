@@ -6,7 +6,7 @@ import type { PaymentStatusResult } from "../domain/payment-status";
 
 /**
  * One check of how the payment of a sale is going. The polling (how often and
- * for how long) belongs to whoever calls it, with PAYMENT_POLLING.
+ * for how long) is PollPaymentStatusUseCase, which repeats this check.
  */
 export class CheckPaymentStatusUseCase {
   constructor(private readonly repository: PaymentRepository) {}
