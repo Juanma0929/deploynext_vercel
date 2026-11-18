@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Can } from "@/features/auth/presentation";
 import {
   getSupplierDetail,
   SupplierNotFoundError,
@@ -34,5 +36,21 @@ export async function generateMetadata({ params }: SupplierPageProps): Promise<M
 
 export default async function SupplierPage({ params }: SupplierPageProps) {
   const { id } = await params;
-  return <SupplierDetailView detail={await loadOrNotFound(id)} />;
+  const detail = await loadOrNotFound(id);
+
+  return (
+    <SupplierDetailView
+      detail={detail}
+      actions={
+        <Can permission="suppliers:write">
+          <Link
+            href={`/proveedores/${detail.supplier.id}/editar`}
+            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
+          >
+            Editar
+          </Link>
+        </Can>
+      }
+    />
+  );
 }
