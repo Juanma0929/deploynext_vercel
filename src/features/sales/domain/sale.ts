@@ -36,6 +36,9 @@ export interface SaleProps {
   readonly total: number;
   readonly status: string;
   readonly lines: readonly SaleLineProps[];
+  /** Set by the payment: the Wompi transaction and how it was paid ("NEQUI", "CARD"). */
+  readonly paymentTransactionId?: string | null;
+  readonly paymentMethod?: string | null;
 }
 
 /** A sale as the API keeps it. The prices and the total come from the server. */
@@ -46,6 +49,8 @@ export class Sale {
   readonly total: Money;
   readonly status: SaleStatus;
   readonly lines: readonly SaleLine[];
+  readonly paymentTransactionId: string | null;
+  readonly paymentMethod: string | null;
 
   constructor(props: SaleProps) {
     if (!isSaleStatus(props.status)) {
@@ -64,6 +69,16 @@ export class Sale {
     this.total = Money.cop(props.total);
     this.status = props.status;
     this.lines = props.lines.map((line) => new SaleLine(line));
+    this.paymentTransactionId = props.paymentTransactionId?.trim() || null;
+    this.paymentMethod = props.paymentMethod?.trim() || null;
+  }
+
+  /**
+   * Pending and with no payment started: the only state in which a sale can
+   * be charged, or cancelled by an admin (the API refuses both otherwise).
+   */
+  get isAwaitingPayment(): boolean {
+    return this.status === "pending" && this.paymentTransactionId === null;
   }
 
   /** How many units were sold, adding every line. */

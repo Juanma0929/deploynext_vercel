@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
 import { BUSINESS_TIME_ZONE, lastDays, todayInColombia } from "@/shared/domain/calendar";
@@ -154,9 +155,11 @@ export function SalesHistoryScreen() {
                   {page.items.map((sale) => (
                     <tr key={sale.id}>
                       <td className="px-4 py-3 whitespace-nowrap tabular-nums">
-                        <time dateTime={sale.createdAt.toISOString()}>
-                          {DATE_TIME_FORMAT.format(sale.createdAt)}
-                        </time>
+                        <Link href={`/ventas/${sale.id}`} className="text-primary hover:underline">
+                          <time dateTime={sale.createdAt.toISOString()}>
+                            {DATE_TIME_FORMAT.format(sale.createdAt)}
+                          </time>
+                        </Link>
                       </td>
                       <td className="px-4 py-3">
                         {history.data.sellerNames.get(sale.sellerId) ?? (

@@ -1,5 +1,6 @@
 import { browserHttpClient } from "@/shared/di/http";
 
+import { CancelSaleUseCase } from "../application/cancel-sale.use-case";
 import { CreateSaleUseCase } from "../application/create-sale.use-case";
 import { ListSalesHistoryUseCase } from "../application/list-sales-history.use-case";
 import { ListSellableProductsUseCase } from "../application/list-sellable-products.use-case";
@@ -13,6 +14,7 @@ export interface SalesContainer {
   readonly listSellableProducts: ListSellableProductsUseCase;
   readonly createSale: CreateSaleUseCase;
   readonly listSalesHistory: ListSalesHistoryUseCase;
+  readonly cancelSale: CancelSaleUseCase;
 }
 
 let container: SalesContainer | null = null;
@@ -32,6 +34,7 @@ export function salesContainer(): SalesContainer {
       repository,
       new SellerDirectoryHttpRepository(http),
     ),
+    cancelSale: new CancelSaleUseCase(repository),
   };
   return container;
 }

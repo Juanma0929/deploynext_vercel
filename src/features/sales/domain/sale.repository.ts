@@ -13,6 +13,19 @@ export interface SaleRepository {
   findAll(): Promise<Sale[]>;
 
   /**
+   * One sale with its items. Rejects with SaleNotFoundError (404, or 400 for
+   * an id that is not a UUID) or SaleNotYoursError (403: a seller asking for
+   * the sale of another seller).
+   */
+  findById(id: string): Promise<Sale>;
+
+  /**
+   * Cancels a pending sale and gives the stock back. Admin only. Rejects with
+   * SaleNotCancellableError (409) or SaleNotFoundError.
+   */
+  cancel(id: string): Promise<Sale>;
+
+  /**
    * Registers a pending sale and decreases the stock. Rejects with
    * SaleRejectedError when a product is inactive, short of stock or gone.
    */

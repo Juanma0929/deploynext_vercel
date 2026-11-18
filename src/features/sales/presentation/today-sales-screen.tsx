@@ -133,7 +133,11 @@ export function TodaySalesScreen({ seesEverySeller }: TodaySalesScreenProps) {
                 <tbody className="divide-y divide-slate-100">
                   {page.items.map((sale) => (
                     <tr key={sale.id}>
-                      <td className="px-4 py-3 tabular-nums">{TIME_FORMAT.format(sale.createdAt)}</td>
+                      <td className="px-4 py-3 tabular-nums">
+                        <Link href={`/ventas/${sale.id}`} className="text-primary font-medium hover:underline">
+                          {TIME_FORMAT.format(sale.createdAt)}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3 text-right font-medium tabular-nums">{sale.total.format()}</td>
                       <td className="px-4 py-3">
                         <SaleStatusBadge status={sale.status} />
