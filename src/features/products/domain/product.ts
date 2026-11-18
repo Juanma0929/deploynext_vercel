@@ -64,6 +64,14 @@ export class Product {
   get isLowStock(): boolean {
     return this.currentStock <= this.minimumStock;
   }
+
+  /**
+   * What each unit leaves: salePrice − purchasePrice. It can be negative,
+   * since the API allows selling below cost.
+   */
+  get margin(): Money {
+    return this.salePrice.subtract(this.purchasePrice);
+  }
 }
 
 function isStock(value: number): boolean {

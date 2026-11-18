@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { InventoryRow } from "../application/list-inventory.use-case";
 
 /** The products of one page of the inventory. */
@@ -20,7 +22,12 @@ export function InventoryTable({ rows }: { readonly rows: readonly InventoryRow[
           {rows.map(({ product, supplierName }) => (
             <tr key={product.id} className={product.isActive ? undefined : "bg-slate-50"}>
               <td className="px-4 py-3">
-                <span className="font-medium">{product.name}</span>
+                <Link
+                  href={`/productos/${product.id}`}
+                  className="text-primary font-medium hover:underline"
+                >
+                  {product.name}
+                </Link>
                 {product.barcode !== null && (
                   <span className="text-muted block font-mono text-xs">{product.barcode}</span>
                 )}

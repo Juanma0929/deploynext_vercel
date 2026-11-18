@@ -1,5 +1,11 @@
+import { cache } from "react";
+
 import { serverHttpClient } from "@/shared/di/http-server";
 
+import {
+  GetProductDetailUseCase,
+  type ProductDetail,
+} from "../application/get-product-detail.use-case";
 import { ListInventoryUseCase, type Inventory } from "../application/list-inventory.use-case";
 import type { ProductFilters } from "../domain/product-filters";
 import {
@@ -8,6 +14,8 @@ import {
 } from "../infrastructure/product.http.repository";
 
 export type { Inventory, InventoryRow } from "../application/list-inventory.use-case";
+export type { ProductDetail } from "../application/get-product-detail.use-case";
+export { ProductNotFoundError } from "../domain/errors";
 
 /**
  * The inventory for the server, filtered and paginated. `returnTo` is the URL
@@ -26,3 +34,15 @@ export function listInventory(
   );
   return useCase.execute(filters, page);
 }
+
+/**
+ * The detail of a product, for the server. cache() makes generateMetadata and
+ * the page of the same request share one pair of API calls.
+ */
+export const getProductDetail = cache((id: string): Promise<ProductDetail> => {
+  const http = serverHttpClient(`/productos/${encodeURIComponent(id)}`);
+  return new GetProductDetailUseCase(
+    new ProductHttpRepository(http),
+    new SupplierNameHttpRepository(http),
+  ).execute(id);
+});

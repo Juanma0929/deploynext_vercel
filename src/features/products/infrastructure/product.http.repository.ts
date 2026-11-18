@@ -1,5 +1,6 @@
-import type { HttpClient } from "@/shared/infrastructure/http";
+import { ApiRequestError, type HttpClient } from "@/shared/infrastructure/http";
 
+import { ProductNotFoundError } from "../domain/errors";
 import type { Product } from "../domain/product";
 import type {
   ProductRepository,
@@ -16,6 +17,16 @@ export class ProductHttpRepository implements ProductRepository {
     const dtos = await this.http.get<ProductDto[]>("/products");
     return dtos.map(toProduct);
   }
+
+  async findById(id: string): Promise<Product> {
+    try {
+      return toProduct(await this.http.get<ProductDto>(`/products/${encodeURIComponent(id)}`));
+    } catch (error: unknown) {
+      // 404: it does not exist; 400: the id is not a UUID. Both read as "not found".
+      if (isMissing(error)) throw new ProductNotFoundError();
+      throw error;
+    }
+  }
 }
 
 export class SupplierNameHttpRepository implements SupplierNameRepository {
@@ -25,4 +36,19 @@ export class SupplierNameHttpRepository implements SupplierNameRepository {
     const dtos = await this.http.get<SupplierNameDto[]>("/suppliers");
     return dtos.map(toSupplierName);
   }
+
+  async findById(id: string): Promise<SupplierName | null> {
+    try {
+      return toSupplierName(
+        await this.http.get<SupplierNameDto>(`/suppliers/${encodeURIComponent(id)}`),
+      );
+    } catch (error: unknown) {
+      if (isMissing(error)) return null;
+      throw error;
+    }
+  }
+}
+
+function isMissing(error: unknown): boolean {
+  return error instanceof ApiRequestError && (error.status === 404 || error.status === 400);
 }
