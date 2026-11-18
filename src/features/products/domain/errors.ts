@@ -8,6 +8,17 @@ export class ProductNotFoundError extends AppError {
   }
 }
 
+/**
+ * DELETE /products/:id answered 409: sales reference the product, so it cannot
+ * be deleted without breaking their history. It can be deactivated instead.
+ */
+export class ProductHasSalesError extends AppError {
+  constructor() {
+    super("Este producto ya se vendió, así que no se puede eliminar.");
+    this.name = "ProductHasSalesError";
+  }
+}
+
 /** 409 on a write: another product already has this barcode. */
 export class DuplicateBarcodeError extends AppError {
   constructor() {

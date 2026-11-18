@@ -5,6 +5,10 @@ import {
 } from "../domain/product-filters";
 
 export const INVENTORY_PATH = "/productos";
+export const LOW_STOCK_PATH = "/productos/stock-bajo";
+
+/** ?eliminado=<name>: the product just deleted, to confirm it above the inventory. */
+export const DELETED_PRODUCT_PARAM = "eliminado";
 
 /** The names of the filters in the URL, so a filtered list can be shared. */
 export const INVENTORY_PARAMS = {

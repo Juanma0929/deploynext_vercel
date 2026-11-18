@@ -8,7 +8,11 @@ import {
   ProductNotFoundError,
   type ProductDetail,
 } from "@/features/products/di/server";
-import { ProductDetailView, ProductQuickActions } from "@/features/products/presentation";
+import {
+  DeleteProductButton,
+  ProductDetailView,
+  ProductQuickActions,
+} from "@/features/products/presentation";
 
 interface ProductPageProps {
   readonly params: Promise<{ readonly id: string }>;
@@ -44,12 +48,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
       detail={detail}
       actions={
         <Can permission="products:write">
-          <Link
-            href={`/productos/${detail.product.id}/editar`}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
-          >
-            Editar
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/productos/${detail.product.id}/editar`}
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
+            >
+              Editar
+            </Link>
+            <DeleteProductButton product={detail.product.toProps()} />
+          </div>
         </Can>
       }
       adminPanel={

@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LinkPagination } from "@/shared/presentation/link-pagination";
 
 import type { Inventory } from "../application/list-inventory.use-case";
 import { InventoryFilters } from "./inventory-filters";
-import { inventoryHref, type InventoryQuery } from "./inventory-search-params";
+import { inventoryHref, LOW_STOCK_PATH, type InventoryQuery } from "./inventory-search-params";
 import { InventoryTable } from "./inventory-table";
 
 interface InventoryScreenProps {
@@ -15,6 +16,8 @@ interface InventoryScreenProps {
    * them with the permission matrix of auth, so products does not import auth.
    */
   readonly actions?: ReactNode;
+  /** The name of a product just deleted, from ?eliminado=, to confirm it. */
+  readonly deletedName?: string | undefined;
 }
 
 /**
@@ -22,7 +25,7 @@ interface InventoryScreenProps {
  * products and the links to the other pages. It has no client state, so the
  * same URL always shows the same list.
  */
-export function InventoryScreen({ inventory, query, actions }: InventoryScreenProps) {
+export function InventoryScreen({ inventory, query, actions, deletedName }: InventoryScreenProps) {
   const { page } = inventory;
 
   return (
@@ -33,11 +36,24 @@ export function InventoryScreen({ inventory, query, actions }: InventoryScreenPr
             Productos
           </h1>
           <p className="text-muted text-sm">
-            El inventario completo, con los productos activos e inactivos.
+            El inventario completo, con los productos activos e inactivos.{" "}
+            <Link href={LOW_STOCK_PATH} className="text-primary font-medium hover:underline">
+              Ver stock bajo
+            </Link>
           </p>
         </div>
         {actions}
       </header>
+
+      {deletedName !== undefined && deletedName !== "" && (
+        // It goes away with the next filter or page: those links do not carry ?eliminado=.
+        <p
+          role="status"
+          className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900"
+        >
+          Se eliminó el producto {deletedName}.
+        </p>
+      )}
 
       {/* The key resets the fields when the URL changes, e.g. after "Quitar filtros". */}
       <InventoryFilters
