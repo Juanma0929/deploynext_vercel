@@ -18,6 +18,7 @@ export function toTopProduct(dto: TopProductRowDto): TopProduct {
     name: dto.name,
     quantitySold: dto.quantitySold,
     revenue: Money.cop(dto.revenue),
+    profit: Money.cop(dto.profit),
   };
 }
 
