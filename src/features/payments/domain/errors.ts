@@ -15,12 +15,24 @@ export class SaleNotChargeableError extends AppError {
 
 /**
  * 502: Wompi failed or did not answer in time. The API changed nothing, so
- * the same charge can be tried again.
+ * the same request can be tried again. The message says what "nothing
+ * changed" means for the call that failed.
  */
 export class PaymentGatewayError extends AppError {
-  constructor() {
-    super("Wompi no respondió a tiempo. No se cobró nada: puedes intentarlo de nuevo.");
+  constructor(message = "Wompi no respondió a tiempo. No se cobró nada: puedes intentarlo de nuevo.") {
+    super(message);
     this.name = "PaymentGatewayError";
+  }
+}
+
+/**
+ * 409 on GET /sales/:id/payment/status: the sale has no payment to check, so
+ * it was never charged, or it is no longer pending.
+ */
+export class NoPaymentToCheckError extends AppError {
+  constructor() {
+    super("Esta venta no tiene un pago para verificar: ya fue cobrada o no está pendiente.");
+    this.name = "NoPaymentToCheckError";
   }
 }
 
@@ -46,7 +58,7 @@ export class TokenizerUnavailableError extends AppError {
 /** 404 (or 400 for an id that is not a UUID): the sale does not exist. */
 export class PaymentSaleNotFoundError extends AppError {
   constructor() {
-    super("La venta que intentas cobrar no existe.");
+    super("La venta no existe.");
     this.name = "PaymentSaleNotFoundError";
   }
 }

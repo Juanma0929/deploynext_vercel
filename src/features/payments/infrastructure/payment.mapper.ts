@@ -1,13 +1,40 @@
 import { ApiRequestError } from "@/shared/infrastructure/http";
 
+import { DomainError } from "@/shared/domain/errors";
+
 import {
+  NoPaymentToCheckError,
   PaymentGatewayError,
   PaymentSaleNotFoundError,
   SaleNotChargeableError,
 } from "../domain/errors";
 import type { PaymentRequest } from "../domain/payment-request";
 import type { StartedPayment } from "../domain/payment.repository";
+import { isSalePaymentStatus, type PaymentStatusResult } from "../domain/payment-status";
 import type { ChargedSaleDto, CreatePaymentDto } from "./dto/payment.dto";
+
+export function toPaymentStatus(dto: ChargedSaleDto): PaymentStatusResult {
+  if (!isSalePaymentStatus(dto.status)) {
+    throw new DomainError("El estado de la venta no es válido.");
+  }
+  return { status: dto.status, transactionId: dto.paymentTransactionId };
+}
+
+/**
+ * On GET /sales/:id/payment/status: 502, Wompi did not answer and the sale did
+ * not change; 409, the sale has no payment; 404 or 400, no such sale.
+ */
+export function toStatusError(error: unknown): unknown {
+  if (!(error instanceof ApiRequestError)) return error;
+  if (error.status === 502) {
+    return new PaymentGatewayError(
+      "Wompi no respondió. La venta no cambió: puedes verificar el pago de nuevo.",
+    );
+  }
+  if (error.status === 409) return new NoPaymentToCheckError();
+  if (error.status === 404 || error.status === 400) return new PaymentSaleNotFoundError();
+  return error;
+}
 
 export function toCreatePaymentDto(request: PaymentRequest): CreatePaymentDto {
   const { customerEmail, details } = request;

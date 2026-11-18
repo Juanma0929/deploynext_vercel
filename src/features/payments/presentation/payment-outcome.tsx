@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { PaymentStatusPanel } from "./payment-status-panel";
+
 interface ChargeStartedProps {
   readonly saleId: string;
   readonly transactionId: string;
@@ -10,25 +12,30 @@ interface ChargeStartedProps {
 }
 
 /**
- * What both forms show once Wompi accepted the charge: the sale stays pending
- * until the result is known, so this links back to it.
+ * What both forms show once Wompi accepted the charge. The sale stays pending
+ * until the result is known, so below it the status is followed live.
+ *
+ * The page is not refreshed when the payment settles: it would render again
+ * for a sale that is no longer awaiting payment, and this would be gone.
  */
 export function ChargeStarted({ saleId, transactionId, title, children }: ChargeStartedProps) {
   return (
-    <div
-      role="status"
-      className="flex max-w-lg flex-col gap-3 rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-950"
-    >
-      <p className="font-semibold">{title}</p>
-      {children}
-      {transactionId !== "" && (
-        <p>
-          Transacción de Wompi: <span className="font-mono text-xs break-all">{transactionId}</span>
-        </p>
-      )}
+    <div className="flex max-w-lg flex-col gap-3">
+      <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4 text-sm">
+        <p className="font-semibold">{title}</p>
+        {children}
+        {transactionId !== "" && (
+          <p>
+            Transacción de Wompi: <span className="font-mono text-xs break-all">{transactionId}</span>
+          </p>
+        )}
+      </div>
+
+      <PaymentStatusPanel saleId={saleId} initialStatus="pending" />
+
       <Link
         href={`/ventas/${saleId}`}
-        className="bg-primary self-start rounded-md px-4 py-2 font-medium text-white"
+        className="self-start rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
       >
         Ver la venta
       </Link>

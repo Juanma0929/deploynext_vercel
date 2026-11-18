@@ -1,4 +1,5 @@
 import type { PaymentRequest } from "./payment-request";
+import type { PaymentStatusResult } from "./payment-status";
 
 /**
  * What the API answers after starting a charge: the sale stays pending until
@@ -18,4 +19,12 @@ export interface PaymentRepository {
    * (409), PaymentGatewayError (502) or PaymentSaleNotFoundError (404).
    */
   charge(saleId: string, request: PaymentRequest): Promise<StartedPayment>;
+
+  /**
+   * Asks Wompi, through the API, how the payment of a sale ended, and updates
+   * the sale: approved makes it paid, declined makes it declined and gives the
+   * stock back. Rejects with PaymentGatewayError (502), NoPaymentToCheckError
+   * (409) or PaymentSaleNotFoundError (404).
+   */
+  checkStatus(saleId: string): Promise<PaymentStatusResult>;
 }

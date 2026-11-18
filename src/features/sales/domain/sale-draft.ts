@@ -42,6 +42,43 @@ export class SaleDraft {
     return new SaleDraft(new Map());
   }
 
+  /**
+   * A cart with the items of an earlier sale, as when a declined sale is
+   * started again (a sale is charged only once). The items are checked
+   * against the current products, like in reconcile(): a product that is gone
+   * or not sellable is left out, and a quantity above the stock is lowered.
+   *
+   * `names` gives the name of a product that no longer exists, for the
+   * adjustment; without it, it reads "Un producto".
+   */
+  static fromItems(
+    items: readonly SaleItem[],
+    products: readonly SaleProduct[],
+    names: ReadonlyMap<string, string> = new Map(),
+  ): { draft: SaleDraft; adjustments: DraftAdjustment[] } {
+    const fresh = new Map(products.map((product) => [product.id, product]));
+    const next = new Map<string, DraftLine>();
+    const adjustments: DraftAdjustment[] = [];
+
+    for (const item of items) {
+      const product = fresh.get(item.productId);
+      if (product === undefined || !product.isSellable) {
+        adjustments.push({
+          productName: product?.name ?? names.get(item.productId) ?? "Un producto",
+          kind: "removed",
+        });
+        continue;
+      }
+      const quantity = Math.min(item.quantity + (next.get(product.id)?.quantity ?? 0), product.currentStock);
+      if (quantity < item.quantity) {
+        adjustments.push({ productName: product.name, kind: "reduced", quantity });
+      }
+      next.set(product.id, lineOf(product, quantity));
+    }
+
+    return { draft: new SaleDraft(next), adjustments };
+  }
+
   /** In the order they were added. */
   get lines(): readonly DraftLine[] {
     return [...this.byProduct.values()];
