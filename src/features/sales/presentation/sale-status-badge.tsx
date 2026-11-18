@@ -1,11 +1,5 @@
 import type { SaleStatus } from "../domain/sale-status";
-
-const LABELS: Readonly<Record<SaleStatus, string>> = {
-  pending: "Pendiente",
-  paid: "Pagada",
-  declined: "Rechazada",
-  cancelled: "Cancelada",
-};
+import { SALE_STATUS_LABELS } from "./sale-status-labels";
 
 const TONES: Readonly<Record<SaleStatus, string>> = {
   pending: "bg-amber-100 text-amber-900",
@@ -17,7 +11,7 @@ const TONES: Readonly<Record<SaleStatus, string>> = {
 export function SaleStatusBadge({ status }: { readonly status: SaleStatus }) {
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONES[status]}`}>
-      {LABELS[status]}
+      {SALE_STATUS_LABELS[status]}
     </span>
   );
 }

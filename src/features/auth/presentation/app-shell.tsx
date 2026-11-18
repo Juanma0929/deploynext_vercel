@@ -7,7 +7,7 @@ import { useState, type ReactNode } from "react";
 import { ROLE_LABELS } from "@/shared/domain/role";
 
 import { AccessDenied } from "./access-denied";
-import { navigationFor } from "./navigation";
+import { activeNavigationHref, navigationFor } from "./navigation";
 import { useAuth } from "./use-auth";
 import { useForbiddenNotice } from "./use-forbidden-notice";
 
@@ -44,6 +44,8 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
   }
 
   const { user } = state;
+  const items = navigationFor(user.role);
+  const activeHref = activeNavigationHref(items, pathname);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -53,8 +55,8 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
             StockPyme
           </Link>
           <nav aria-label="Principal" className="flex flex-1 flex-wrap gap-1">
-            {navigationFor(user.role).map((item) => {
-              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            {items.map((item) => {
+              const isActive = item.href === activeHref;
               return (
                 <Link
                   key={item.href}
