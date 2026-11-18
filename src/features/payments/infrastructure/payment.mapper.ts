@@ -1,6 +1,10 @@
-import { ApiRequestError } from "@/shared/infrastructure/http";
-
-import { DomainError } from "@/shared/domain/errors";
+import {
+  ConflictError,
+  DomainError,
+  GatewayError,
+  NotFoundError,
+  ValidationError,
+} from "@/shared/domain/errors";
 
 import {
   NoPaymentToCheckError,
@@ -25,14 +29,13 @@ export function toPaymentStatus(dto: ChargedSaleDto): PaymentStatusResult {
  * not change; 409, the sale has no payment; 404 or 400, no such sale.
  */
 export function toStatusError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 502) {
+  if (error instanceof GatewayError) {
     return new PaymentGatewayError(
       "Wompi no respondió. La venta no cambió: puedes verificar el pago de nuevo.",
     );
   }
-  if (error.status === 409) return new NoPaymentToCheckError();
-  if (error.status === 404 || error.status === 400) return new PaymentSaleNotFoundError();
+  if (error instanceof ConflictError) return new NoPaymentToCheckError();
+  if (error instanceof NotFoundError || error instanceof ValidationError) return new PaymentSaleNotFoundError();
   return error;
 }
 
@@ -65,9 +68,8 @@ export function toStartedPayment(dto: ChargedSaleDto): StartedPayment {
  * already warns about every 403.
  */
 export function toChargeError(error: unknown): unknown {
-  if (!(error instanceof ApiRequestError)) return error;
-  if (error.status === 409) return new SaleNotChargeableError();
-  if (error.status === 502) return new PaymentGatewayError();
-  if (error.status === 404) return new PaymentSaleNotFoundError();
+  if (error instanceof ConflictError) return new SaleNotChargeableError();
+  if (error instanceof GatewayError) return new PaymentGatewayError();
+  if (error instanceof NotFoundError) return new PaymentSaleNotFoundError();
   return error;
 }

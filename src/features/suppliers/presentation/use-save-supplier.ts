@@ -2,15 +2,23 @@
 
 import { useCallback } from "react";
 
-import { errorMessage } from "@/shared/domain/errors";
+import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import { suppliersContainer } from "../di/container";
 import { Supplier, type SupplierProps } from "../domain/supplier";
 import type { SupplierFormValues } from "../domain/supplier-input";
+import type { SupplierFormField } from "./supplier-schema";
 
 export type SaveSupplierResult =
   | { readonly ok: true; readonly supplier: Supplier }
-  | { readonly ok: false; readonly message: string };
+  /** `fieldErrors` go next to their fields (a 400 of the API); `message`, if any, above the form. */
+  | {
+      readonly ok: false;
+      readonly fieldErrors: Partial<Record<SupplierFormField, string>>;
+      readonly message: string | null;
+    };
+
+const SUPPLIER_FIELDS: readonly SupplierFormField[] = ["name", "contactName", "phone", "email", "address"];
 
 /**
  * The facade of the supplier form: creates a supplier, or saves the changes
@@ -28,7 +36,8 @@ export function useSaveSupplier(current: SupplierProps | undefined) {
             : await updateSupplier.execute(new Supplier(current), values);
         return { ok: true, supplier };
       } catch (error: unknown) {
-        return { ok: false, message: errorMessage(error) };
+        const { fields, message } = formErrorsFrom(error, SUPPLIER_FIELDS);
+        return { ok: false, fieldErrors: fields, message };
       }
     },
     [current],

@@ -1,4 +1,4 @@
-import { ApiRequestError, NETWORK_ERROR_STATUS, messagesFromBody } from "./api-request-error";
+import { messagesFromBody, networkError, toAppError } from "./api-error-mapper";
 import type { HttpClient, HttpRequestOptions, QueryValue } from "./http-client";
 import type { TokenStorage } from "./token-storage";
 
@@ -30,8 +30,9 @@ export interface FetchHttpClientConfig {
  * - on a 403 it calls onForbidden, so the app can warn the user even if the
  *   caller does not handle the error. The interface hides what a role cannot
  *   do, so a 403 means the hiding missed something or the role just changed;
- * - every failure throws an ApiRequestError, with `message` read whether the
- *   API sent a string or an array;
+ * - every failure throws an error of the domain, translated by the central
+ *   mapper (toAppError), with `message` read whether the API sent a string
+ *   or an array. Nothing above this file ever sees a status code;
  * - a 204 is returned as undefined, without reading the body.
  */
 export class FetchHttpClient implements HttpClient {
@@ -73,7 +74,7 @@ export class FetchHttpClient implements HttpClient {
     return JSON.parse(text) as T;
   }
 
-  /** Sends the request and throws an ApiRequestError for anything that is not 2xx. */
+  /** Sends the request and throws an error of the domain for anything that is not 2xx. */
   private async send(
     method: Method,
     path: string,
@@ -98,7 +99,7 @@ export class FetchHttpClient implements HttpClient {
     try {
       response = await fetch(this.buildUrl(normalizedPath, options?.query), init);
     } catch {
-      throw new ApiRequestError(NETWORK_ERROR_STATUS, []);
+      throw networkError();
     }
 
     if (response.ok) return response;
@@ -108,7 +109,7 @@ export class FetchHttpClient implements HttpClient {
       this.config.onSessionExpired();
     }
 
-    const error = new ApiRequestError(response.status, await this.readMessages(response));
+    const error = toAppError(response.status, await this.readMessages(response));
     if (response.status === 403) this.config.onForbidden();
     throw error;
   }

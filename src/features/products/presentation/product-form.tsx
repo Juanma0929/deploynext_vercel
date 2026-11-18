@@ -13,6 +13,7 @@ import {
   TextInput,
   Textarea,
   describedBy,
+  useToast,
 } from "@/shared/presentation/ui";
 
 import { Product, type ProductProps } from "../domain/product";
@@ -63,6 +64,7 @@ interface TextOptions {
 export function ProductForm({ suppliers, product }: ProductFormProps) {
   const router = useRouter();
   const save = useSaveProduct(product);
+  const { toast } = useToast();
   const isEdit = product !== undefined;
   const cancelHref = isEdit ? `/productos/${product.id}` : INVENTORY_PATH;
   const ids = {
@@ -114,6 +116,7 @@ export function ProductForm({ suppliers, product }: ProductFormProps) {
       setFormError(result.message);
       return;
     }
+    toast({ tone: "success", message: isEdit ? "Cambios guardados." : "Producto creado." });
     // refresh() so the pages rendered on the server show the saved product.
     router.push(`/productos/${result.productId}`);
     router.refresh();

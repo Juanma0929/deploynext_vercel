@@ -1,4 +1,5 @@
-import { ApiRequestError, type HttpClient } from "@/shared/infrastructure/http";
+import { NotFoundError, ValidationError } from "@/shared/domain/errors";
+import type { HttpClient } from "@/shared/infrastructure/http";
 
 import { ProductNotFoundError } from "../domain/errors";
 import type { Product } from "../domain/product";
@@ -90,5 +91,5 @@ export class SupplierNameHttpRepository implements SupplierNameRepository {
 }
 
 function isMissing(error: unknown): boolean {
-  return error instanceof ApiRequestError && (error.status === 404 || error.status === 400);
+  return error instanceof NotFoundError || error instanceof ValidationError;
 }

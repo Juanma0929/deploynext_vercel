@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
-import { Alert, Button, ButtonLink, Field, TextInput, describedBy } from "@/shared/presentation/ui";
+import { Alert, Button, ButtonLink, Field, TextInput, describedBy, useToast } from "@/shared/presentation/ui";
 
 import type { SupplierProps } from "../domain/supplier";
 import type { SupplierFormValues } from "../domain/supplier-input";
@@ -25,6 +25,7 @@ interface SupplierFormProps {
 export function SupplierForm({ supplier }: SupplierFormProps) {
   const router = useRouter();
   const save = useSaveSupplier(supplier);
+  const { toast } = useToast();
   const isEdit = supplier !== undefined;
   const ids = {
     name: useId(),
@@ -74,9 +75,11 @@ export function SupplierForm({ supplier }: SupplierFormProps) {
 
     if (!result.ok) {
       setIsSaving(false);
+      setErrors(result.fieldErrors);
       setFormError(result.message);
       return;
     }
+    toast({ tone: "success", message: isEdit ? "Cambios guardados." : "Proveedor creado." });
     // refresh() so the server-rendered detail shows the saved data.
     router.push(`/proveedores/${result.supplier.id}`);
     router.refresh();

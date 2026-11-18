@@ -126,6 +126,8 @@ export default defineConfig([
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "no-console": ["error", { allow: ["warn", "error"] }],
+      // Feedback is a toast, a confirmation is a Modal: never alert(), confirm() or prompt().
+      "no-alert": "error",
     },
   },
   {

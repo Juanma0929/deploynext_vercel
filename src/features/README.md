@@ -33,6 +33,31 @@ Además:
   `src/shared/infrastructure/http`, que se crea en `src/shared/di/http.ts`.
 - Un feature no importa otro feature. Si dos necesitan lo mismo, va en `src/shared`.
 
+## Manejo de errores
+
+Un **único mapper central** (`src/shared/infrastructure/http/api-error-mapper.ts`) traduce cada respuesta
+fallida de la API a un error de dominio (`src/shared/domain/errors.ts`). El cliente HTTP lo aplica a
+todo, así que ninguna capa por encima de `infrastructure/http` lee un código de estado:
+
+| Respuesta | Error de dominio | En la interfaz |
+| --- | --- | --- |
+| 400 con `message` como arreglo | `ValidationError` con `fieldErrors` en español | Cada mensaje junto a su campo (`formErrorsFrom`); lo que no es de ningún campo, arriba del formulario |
+| 401 | `UnauthorizedError` | El cliente cierra la sesión y lleva a `/login` |
+| 403 | `ForbiddenError` | Un toast de aviso, venga de donde venga la petición |
+| 404 | `NotFoundError` | `not-found.tsx` o el mensaje de la feature |
+| 409 | `ConflictError` con el mensaje de negocio de la API | El mensaje, traducido por la feature cuando lo conoce |
+| 502 | `GatewayError` (`isRetryable`) | Opción de reintentar: no cambió nada |
+| otro 5xx / sin red | `ServerError` / `NetworkError` (`isRetryable`) | Opción de reintentar |
+
+Los mappers de cada feature solo **especializan** esos errores (`ConflictError` en `POST /products` es
+`DuplicateBarcodeError`), por tipo y nunca por número; los mensajes originales de la API quedan en
+`error.details` para reconocerlos.
+
+El feedback de una acción es un **toast** (`useToast`) y una confirmación es un **Modal**:
+`window.alert`, `confirm` y `prompt` están prohibidos por ESLint (`no-alert`). Cada segmento de
+`(protected)` tiene su `error.tsx` y su `loading.tsx` (`SegmentError`, `SegmentLoading`), y hay
+`not-found.tsx` en el área privada, en cada detalle y en la raíz, más un `global-error.tsx`.
+
 ## Permisos por rol
 
 La matriz vive en el dominio de auth (`src/features/auth/domain/permissions.ts`) y refleja los

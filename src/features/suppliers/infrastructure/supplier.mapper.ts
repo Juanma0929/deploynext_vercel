@@ -1,4 +1,4 @@
-import { ApiRequestError } from "@/shared/infrastructure/http";
+import { ConflictError, NotFoundError, ValidationError } from "@/shared/domain/errors";
 
 import { SupplierHasProductsError, SupplierNotFoundError } from "../domain/errors";
 import { Supplier } from "../domain/supplier";
@@ -38,7 +38,7 @@ export function toSupplierProduct(dto: SupplierProductDto): SupplierProduct {
  * server client throws on a 401, goes through unchanged.
  */
 export function toSupplierLookupError(error: unknown): unknown {
-  if (error instanceof ApiRequestError && (error.status === 404 || error.status === 400)) {
+  if (error instanceof NotFoundError || error instanceof ValidationError) {
     return new SupplierNotFoundError();
   }
   return error;
@@ -46,7 +46,7 @@ export function toSupplierLookupError(error: unknown): unknown {
 
 /** On a write, a 400 means an invalid body (shown as is); only a 404 means it is gone. */
 export function toSupplierWriteError(error: unknown): unknown {
-  if (error instanceof ApiRequestError && error.status === 404) return new SupplierNotFoundError();
+  if (error instanceof NotFoundError) return new SupplierNotFoundError();
   return error;
 }
 
@@ -73,6 +73,6 @@ export function toUpdateSupplierDto(changes: SupplierChanges): UpdateSupplierDto
 
 /** DELETE answers 409 ("referenced by other records") while the supplier has products. */
 export function toSupplierDeleteError(error: unknown): unknown {
-  if (error instanceof ApiRequestError && error.status === 409) return new SupplierHasProductsError();
+  if (error instanceof ConflictError) return new SupplierHasProductsError();
   return toSupplierWriteError(error);
 }

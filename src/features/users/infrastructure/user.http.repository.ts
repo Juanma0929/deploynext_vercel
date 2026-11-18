@@ -1,4 +1,5 @@
-import { ApiRequestError, type HttpClient } from "@/shared/infrastructure/http";
+import { ConflictError } from "@/shared/domain/errors";
+import type { HttpClient } from "@/shared/infrastructure/http";
 
 import { EmailAlreadyRegisteredError } from "../domain/errors";
 import type { User } from "../domain/user";
@@ -19,7 +20,7 @@ export class UserHttpRepository implements UserRepository {
     try {
       return toUser(await this.http.post<UserDto>("/users", toCreateUserDto(user)));
     } catch (error: unknown) {
-      if (error instanceof ApiRequestError && error.status === 409) {
+      if (error instanceof ConflictError) {
         throw new EmailAlreadyRegisteredError();
       }
       throw error;

@@ -77,6 +77,7 @@ export function NequiPaymentForm({ saleId, totalLabel }: NequiPaymentFormProps) 
         return;
       case "invalid":
         setIssues(result.issues);
+        if (result.message !== null) setFailure({ message: result.message, canRetry: false });
         return;
       case "not-chargeable":
         setNotChargeable(result.message);

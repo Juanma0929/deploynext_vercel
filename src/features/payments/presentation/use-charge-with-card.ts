@@ -2,21 +2,21 @@
 
 import { useCallback } from "react";
 
-import { errorMessage } from "@/shared/domain/errors";
+import { ValidationError, errorMessage, isRetryable } from "@/shared/domain/errors";
+import { formErrorsFrom } from "@/shared/presentation/form-errors";
 
 import type { StartedCardPayment } from "../application/charge-with-card.use-case";
 import { paymentsContainer } from "../di/container";
 import {
   InvalidCardPaymentError,
+  type CardPaymentField,
   type CardPaymentFormValues,
   type CardPaymentIssues,
 } from "../domain/card-details";
-import {
-  CardRejectedError,
-  PaymentGatewayError,
-  SaleNotChargeableError,
-  TokenizerUnavailableError,
-} from "../domain/errors";
+import { CardRejectedError, SaleNotChargeableError } from "../domain/errors";
+
+/** The fields of the card form that POST /sales/:id/payment receives (the card goes to Wompi). */
+const CARD_API_FIELDS: readonly CardPaymentField[] = ["customerEmail", "installments"];
 
 export type CardChargeResult =
   | { readonly kind: "started"; readonly result: StartedCardPayment }
@@ -44,14 +44,16 @@ export function useChargeWithCard(saleId: string) {
         if (error instanceof CardRejectedError) {
           return { kind: "invalid", issues: error.issues, message: error.message };
         }
+        if (error instanceof ValidationError) {
+          // A 400 of POST /sales/:id/payment: the email or the installments.
+          const { fields, message } = formErrorsFrom(error, CARD_API_FIELDS);
+          return { kind: "invalid", issues: fields, message };
+        }
         if (error instanceof SaleNotChargeableError) {
           return { kind: "not-chargeable", message: error.message };
         }
-        return {
-          kind: "failed",
-          message: errorMessage(error),
-          canRetry: error instanceof PaymentGatewayError || error instanceof TokenizerUnavailableError,
-        };
+        // PaymentGatewayError (502) and TokenizerUnavailableError are retryable: nothing was charged.
+        return { kind: "failed", message: errorMessage(error), canRetry: isRetryable(error) };
       }
     },
     [saleId],
