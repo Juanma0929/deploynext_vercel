@@ -1,0 +1,129 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same branch or PR cancels the run still going on the old one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  API_URL: https://stockpyme-api-g4.onrender.com
+
+jobs:
+  quality:
+    name: Lint, typecheck y pruebas unitarias
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  e2e:
+    name: Pruebas E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The tests run against the API on Render, which is shared state: two runs
+    # at the same time (two PRs, or a PR and main) would step on each other.
+    concurrency:
+      group: e2e-render
+      cancel-in-progress: false
+    env:
+      CI: true
+      # The build of the front (started by playwright.config.ts) bakes these in.
+      NEXT_PUBLIC_API_URL: https://stockpyme-api-g4.onrender.com
+      NEXT_PUBLIC_WOMPI_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_WOMPI_PUBLIC_KEY }}
+      # The seed users of the API on Render.
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL || 'admin@stockpyme.com' }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_SELLER_EMAIL: ${{ secrets.E2E_SELLER_EMAIL || 'seller@stockpyme.com' }}
+      E2E_SELLER_PASSWORD: ${{ secrets.E2E_SELLER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      # The free plan of Render sleeps after 15 minutes idle and takes about a
+      # minute to wake up: the tests start once /health answers.
+      - name: Despertar la API de Render
+        run: |
+          for attempt in $(seq 1 36); do
+            if curl -fsS --max-time 10 "$API_URL/health" > /dev/null; then
+              echo "API lista (intento $attempt)."
+              exit 0
+            fi
+            echo "La API aún no responde (intento $attempt), reintento en 5 s..."
+            sleep 5
+          done
+          echo "::error::La API de Render no respondió en 3 minutos."
+          exit 1
+
+      - name: Correr las pruebas E2E
+        run: npm run test:e2e
+
+      - name: Subir el reporte de Playwright
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  deploy:
+    name: Desplegar en Vercel
+    needs: [quality, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      - name: Instalar la CLI de Vercel
+        run: npm install --global vercel@latest
+
+      # Downloads the project settings and its Production variables
+      # (NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WOMPI_PUBLIC_KEY).
+      - name: Traer la configuración de Vercel
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Construir
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Desplegar
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Desplegado en $url"
