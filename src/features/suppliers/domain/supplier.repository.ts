@@ -1,7 +1,8 @@
 import type { Supplier } from "./supplier";
+import type { NewSupplier, SupplierChanges } from "./supplier-input";
 import type { SupplierProduct } from "./supplier-product";
 
-/** The port to /suppliers. Every logged-in role may read it. */
+/** The port to /suppliers. Every role may read it; only an admin may write. */
 export interface SupplierRepository {
   list(): Promise<Supplier[]>;
 
@@ -10,4 +11,9 @@ export interface SupplierRepository {
 
   /** The products of the supplier. Rejects with SupplierNotFoundError like findById. */
   listProducts(supplierId: string): Promise<SupplierProduct[]>;
+
+  create(supplier: NewSupplier): Promise<Supplier>;
+
+  /** Rejects with SupplierNotFoundError when the supplier no longer exists. */
+  update(id: string, changes: SupplierChanges): Promise<Supplier>;
 }

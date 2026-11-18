@@ -5,10 +5,12 @@ import type { SupplierDetail } from "../application/get-supplier-detail.use-case
 
 interface SupplierDetailViewProps {
   readonly detail: SupplierDetail;
+  /** Buttons for the header, such as "Editar". The route decides who sees them. */
+  readonly actions?: ReactNode;
 }
 
 /** A supplier, how to reach it and the products it supplies. Rendered on the server. */
-export function SupplierDetailView({ detail }: SupplierDetailViewProps) {
+export function SupplierDetailView({ detail, actions }: SupplierDetailViewProps) {
   const { supplier, products } = detail;
   const lowStockCount = products.filter((product) => product.isActive && product.isLowStock).length;
 
@@ -20,10 +22,11 @@ export function SupplierDetailView({ detail }: SupplierDetailViewProps) {
         </Link>
       </nav>
 
-      <header>
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 id="supplier-title" className="text-2xl font-semibold">
           {supplier.name}
         </h1>
+        {actions}
       </header>
 
       <section aria-labelledby="supplier-contact-title" className="rounded-lg border border-slate-200 bg-white p-4">

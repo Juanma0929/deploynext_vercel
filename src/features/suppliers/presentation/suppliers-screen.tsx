@@ -57,7 +57,14 @@ function SuppliersList({ canManage }: SuppliersScreenProps) {
               : "Consulta los datos de contacto de los proveedores. Solo un administrador puede modificarlos."}
           </p>
         </div>
-        {!canManage && (
+        {canManage ? (
+          <Link
+            href="/proveedores/nuevo"
+            className="bg-primary rounded-md px-4 py-2 text-sm font-medium text-white"
+          >
+            Nuevo proveedor
+          </Link>
+        ) : (
           <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
             Solo lectura
           </span>
