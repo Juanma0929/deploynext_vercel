@@ -1,10 +1,16 @@
 import type { Product } from "./product";
+import type { ProductDraft } from "./product-input";
 
 export interface ProductRepository {
   /** Every product, active and inactive, ordered by name. */
   list(): Promise<Product[]>;
   /** One product. Rejects with ProductNotFoundError if it does not exist. */
   findById(id: string): Promise<Product>;
+  /**
+   * Creates a product. Rejects with DuplicateBarcodeError (409) or with
+   * ProductSupplierNotFoundError (404).
+   */
+  create(draft: ProductDraft): Promise<Product>;
 }
 
 /** The name of a supplier, to show next to its products. */

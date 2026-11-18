@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { LinkPagination } from "@/shared/presentation/link-pagination";
 
 import type { Inventory } from "../application/list-inventory.use-case";
@@ -8,6 +10,11 @@ import { InventoryTable } from "./inventory-table";
 interface InventoryScreenProps {
   readonly inventory: Inventory;
   readonly query: InventoryQuery;
+  /**
+   * The actions of the header, such as "Nuevo producto". The route decides
+   * them with the permission matrix of auth, so products does not import auth.
+   */
+  readonly actions?: ReactNode;
 }
 
 /**
@@ -15,18 +22,21 @@ interface InventoryScreenProps {
  * products and the links to the other pages. It has no client state, so the
  * same URL always shows the same list.
  */
-export function InventoryScreen({ inventory, query }: InventoryScreenProps) {
+export function InventoryScreen({ inventory, query, actions }: InventoryScreenProps) {
   const { page } = inventory;
 
   return (
     <section aria-labelledby="inventory-title" className="flex flex-col gap-6">
-      <header>
-        <h1 id="inventory-title" className="text-2xl font-semibold">
-          Productos
-        </h1>
-        <p className="text-muted text-sm">
-          El inventario completo, con los productos activos e inactivos.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 id="inventory-title" className="text-2xl font-semibold">
+            Productos
+          </h1>
+          <p className="text-muted text-sm">
+            El inventario completo, con los productos activos e inactivos.
+          </p>
+        </div>
+        {actions}
       </header>
 
       {/* The key resets the fields when the URL changes, e.g. after "Quitar filtros". */}

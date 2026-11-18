@@ -7,6 +7,8 @@ import {
   type ProductDetail,
 } from "../application/get-product-detail.use-case";
 import { ListInventoryUseCase, type Inventory } from "../application/list-inventory.use-case";
+import { ListSupplierOptionsUseCase } from "../application/list-supplier-options.use-case";
+import type { SupplierName } from "../domain/product.repository";
 import type { ProductFilters } from "../domain/product-filters";
 import {
   ProductHttpRepository,
@@ -15,6 +17,7 @@ import {
 
 export type { Inventory, InventoryRow } from "../application/list-inventory.use-case";
 export type { ProductDetail } from "../application/get-product-detail.use-case";
+export type { SupplierName } from "../domain/product.repository";
 export { ProductNotFoundError } from "../domain/errors";
 
 /**
@@ -33,6 +36,13 @@ export function listInventory(
     new SupplierNameHttpRepository(http),
   );
   return useCase.execute(filters, page);
+}
+
+/** The suppliers to choose from in the product form, for the server. */
+export function listSupplierOptions(returnTo: string): Promise<SupplierName[]> {
+  return new ListSupplierOptionsUseCase(
+    new SupplierNameHttpRepository(serverHttpClient(returnTo)),
+  ).execute();
 }
 
 /**
